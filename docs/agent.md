@@ -1,6 +1,6 @@
 # Scouting agent (Module 1)
 
-Fill names and the 10 course dimensions after Week 1. This is the PEAS contract the app Overview will quote.
+Fill names and the 10 course dimensions after Week 1. The live PEAS payload is `src/agent/peas.py`, served at `GET /v1/agent`.
 
 ## PEAS
 

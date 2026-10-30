@@ -1,0 +1,49 @@
+"""HTTP service contract tests (no Transfermarkt download)."""
+
+from fastapi.testclient import TestClient
+
+from service.main import app
+
+client = TestClient(app)
+
+
+def test_health() -> None:
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+def test_meta_and_agent() -> None:
+    meta = client.get("/v1/meta").json()
+    assert meta["dataset"] == "davidcariboo/player-scores"
+    assert meta["big5"] == ["GB1", "ES1", "IT1", "L1", "FR1"]
+    agent = client.get("/v1/agent").json()
+    assert "performance" in agent["peas"]
+    assert "not transfer advice" in agent["disclaimer"]
+
+
+def test_status_lists_all_artifacts() -> None:
+    payload = client.get("/v1/status").json()
+    assert set(payload["artifacts"]) >= {
+        "split",
+        "archetypes",
+        "forecast",
+        "scores",
+        "search",
+        "squad",
+        "policy",
+    }
+
+
+def test_scores_are_unavailable_until_pipeline_runs() -> None:
+    response = client.get("/v1/scores/418560")
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail["owner"] == "member_b"
+    assert detail["artifact"] == "scores"
+
+
+def test_index_page_is_served() -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Football Scouting Agent" in response.content

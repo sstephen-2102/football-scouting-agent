@@ -48,7 +48,7 @@ Educational research, not betting advice and not a claim that Transfermarkt valu
 5. Search a starting XI: state = which of 11 slots are filled; compare BFS/random vs greedy/A* (heuristic = predicted XI quality).
 6. Solve a MIP: maximize predicted squad quality subject to *B*, 11 starters, min/max per position.
 7. Learn a bid/pass policy (bandit + Q-learning) vs greedy-by-undervalued-score under remaining *B*.
-8. App shows PEAS, disclaimers, and the graphs in §2.3.
+8. The HTTP service exposes PEAS, disclaimers, scores, XI, allocation, and bid/pass. Comparison graphs are files under `outputs/figures/`, not notebooks.
 
 ### 2.3 Questions that must have graphs
 
@@ -69,6 +69,7 @@ Negative results are in scope.
 - Training on all 1.89M appearance rows without aggregating to player-season
 - Resubmitting AAI-500 diabetes materials
 - DQN robotics, NLP
+- Jupyter notebooks or Streamlit apps (the product is the FastAPI service)
 
 ---
 
@@ -76,8 +77,8 @@ Negative results are in scope.
 
 | Module | Learning outcomes | In this project | Evidence |
 |---|---|---|---|
-| **1** | History of AI; agent, environment, 10 dimensions; AI-assisted lit review | Scouting agent PEAS; 10-dimension score; lit-review notebook on player valuation / squad construction | `notebooks/lit_review_agent.ipynb`; paper §1 |
-| **2** | State-space graphs; uninformed vs informed search | XI construction as a graph. State = filled slots + remaining players. Actions = assign a shortlisted player to a legal position. BFS/random vs greedy/A* | `src/search/`; Search Lab |
+| **1** | History of AI; agent, environment, 10 dimensions; AI-assisted lit review | Scouting agent PEAS in `src/agent/peas.py`; 10-dimension score; `python -m src.agent.literature` writes `docs/references.md` | `GET /v1/agent`; paper §1 |
+| **2** | State-space graphs; uninformed vs informed search | XI construction as a graph. State = filled slots + remaining players. Actions = assign a shortlisted player to a legal position. BFS/random vs greedy/A* | `src/search/`; `POST /v1/search/xi` |
 | **3** | LP/MIP; implement Simplex; ML metrics | Educational Simplex on a 2–3 position toy budget. MIP on the full XI + bench cap. Metrics as in `contracts.md` | `src/optimize/` |
 | **4** | Supervised + unsupervised; ML lifecycle | K-means / GMM archetypes; ridge/GB value regression; undervalued classifier; time split; lifecycle figure | cluster + modeling exports |
 | **5** | STL / classical decompose; ARIMA, Holt-Winters | Weekly Big-5 goals (or monthly summed valuations). Holdout MAPE. Feed a transformed forecast into *B* if it is stable; otherwise use *B* as a user input and still report the forecast | `src/forecast/` |
@@ -96,12 +97,12 @@ If you are the only person from another USD project, still take a full vertical 
 
 **Build**
 
-- `docs/agent.md`: PEAS (performance = test Spearman + undervalued $ captured under *B*; environment = Transfermarkt snapshot, partially observable, stochastic, sequential, dynamic, mixed discrete/continuous, single-agent); 10 dimensions.
-- `notebooks/lit_review_agent.ipynb`: prompts, sources, human-verified APA list.
+- `src/agent/peas.py` and `docs/agent.md`: PEAS (performance = test Spearman + undervalued $ captured under *B*; environment = Transfermarkt snapshot, partially observable, stochastic, sequential, dynamic, mixed discrete/continuous, single-agent); 10 dimensions. Served at `GET /v1/agent`.
+- `python -m src.agent.literature`: writes the human-verified APA list to `docs/references.md` (no notebooks).
 - `src/cluster/`: k-means, GMM, agglomerative-on-subsample; `select_k` (silhouette, Davies–Bouldin, BIC); labels for train/val/test via nearest centroid / predict; **no value in the fit**.
 - Profiles: goals/90, assists/90, cards/90, minutes, age, later median value.
 - `src/forecast/`: weekly Big-5 goals from `appearances`×`games`; classical + STL; Holt-Winters and ARIMA; holdout; `outputs/forecast/budget.json`.
-- Pages: Archetype Lab, Forecast.
+- HTTP: `GET /v1/archetypes`, `GET /v1/forecast` (503 until exports exist).
 - Tests on synthetic player-seasons and a tiny weekly series.
 
 **Hands B/C:** `archetype_labels.parquet`, `budget.json`.
@@ -121,7 +122,7 @@ If you are the only person from another USD project, still take a full vertical 
 
 - Time split from `outputs/splits/`.
 - Permutation importance; 6–8 field subset consumed from C’s search if ready, else a simple top-k ablation.
-- Experiment Board: predicted vs actual value, residual map, PR curve for undervalued.
+- Export comparison tables/figures under `outputs/`; expose scores at `GET /v1/scores/{player_id}`.
 - Tests: no future dates in features; val disjoint from test seasons.
 
 **Hands C:** `player_scores.parquet` (player_id, season, pred_value, p_undervalued, archetype).
@@ -136,7 +137,7 @@ If you are the only person from another USD project, still take a full vertical 
 - `src/optimize/simplex.py`: hand Simplex on a 2–3 variable budget LP (e.g. two positions).
 - `src/optimize/squad.py`: PuLP MIP, max predicted quality s.t. *B*, one player per slot, min 1 GK, etc.
 - `src/policy/`: bandit over archetypes/positions; Q-learning simulator sampling val shortlist; compare cumulative undervaluation captured.
-- Search Lab + Squad/Policy page + Overview chrome.
+- HTTP: `POST /v1/search/xi`, `POST /v1/squad/allocate`, `POST /v1/policy/bid`. Keep the FastAPI shell healthy.
 - README, contribution appendix, slide master, recording logistics.
 
 **Paper / talk:** search, MIP vs greedy, policy demo, limits (~8–10 min).
@@ -147,12 +148,12 @@ If you are the only person from another USD project, still take a full vertical 
 
 | Week | Course | A | B | C |
 |---|---|---|---|---|
-| **1** | Agents, lit review | PEAS + 10 dimensions; start notebook | Inspect schema; draft feature list | GitHub, this spec in repo, instructor-facing README |
+| **1** | Agents, lit review | PEAS in code; `python -m src.agent.literature` | Inspect schema; draft feature list | GitHub, FastAPI shell, instructor-facing README |
 | **2** | Search | Clustering skeleton | Player-season table + split parquet | XI graph; BFS vs greedy on a 30-player toy |
 | **3** | LP/MIP, metrics | k-selection MVP | Metric contract locked; R0 | Toy Simplex tests. **Submit 1–2 page proposal** |
-| **4** | Sup + unsup lifecycle | Archetypes on train; page live | R0/R1 + undervalued C1 | Search comparison on val shortlist |
+| **4** | Sup + unsup lifecycle | Archetypes on train; `/v1/archetypes` live | R0/R1 + undervalued C1 | Search comparison on val shortlist |
 | **5** | Time series | STL + HW/ARIMA; `budget.json` | Residuals vs time (no leakage) | MIP uses *B* |
-| **6** | Deep learning | Paper clustering + forecast | S1 LSTM/1D-CNN vs R1; Experiment Board | Screener wired to scores |
+| **6** | Deep learning | Paper clustering + forecast | S1 LSTM/1D-CNN vs R1; `/v1/scores` | Bid/search routes wired to scores |
 | **7** | RL | Talk 8–10 min | Talk 8–10 min | Bandit + Q; talk 8–10 min; **submit paper, GitHub, recording, peer eval** |
 
 No extensions on Week 7.
@@ -161,7 +162,7 @@ No extensions on Week 7.
 
 ## 6. Definition of done
 
-**Each member:** package + tests; export writes tables/figures/manifest; one Streamlit page on real outputs; APA sections; equal minutes on the recording.
+**Each member:** package + tests; pipeline command writes artifacts; owned HTTP routes return 200 on those artifacts (503 before); APA sections; equal minutes on the recording.
 
 **Team:** public GitHub with this README; all seven modules evidenced as in §3; graphs for §2.3; snapshot date and leakage rules stated; contribution appendix.
 

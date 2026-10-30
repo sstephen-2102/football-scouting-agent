@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Football Scouting Agent</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 2rem auto; max-width: 52rem; line-height: 1.45; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .muted { color: #666; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border-bottom: 1px solid #ccc; text-align: left; padding: 0.4rem 0.5rem; font-size: 0.92rem; }
+    .ready { color: #0a7; }
+    .missing { color: #b40; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <h1>Football Scouting Agent</h1>
+  <p class="muted" id="meta">Loading…</p>
+  <p>HTTP API: <a href="/docs">/docs</a> · batch jobs: <code>python -m src.pipeline status</code></p>
+  <p id="disclaimer"></p>
+  <table>
+    <thead><tr><th>Artifact</th><th>State</th><th>Owner</th><th>Producer</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <script>
+    async function load() {
+      const meta = await (await fetch("/v1/meta")).json();
+      const agent = await (await fetch("/v1/agent")).json();
+      const status = await (await fetch("/v1/status")).json();
+      document.getElementById("meta").textContent =
+        meta.dataset + " · snapshot " + meta.snapshot_date + " · Big 5 " + meta.big5.join(", ");
+      document.getElementById("disclaimer").textContent = agent.disclaimer;
+      const tbody = document.getElementById("rows");
+      tbody.replaceChildren();
+      for (const [name, row] of Object.entries(status.artifacts)) {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + name + "</td>" +
+          "<td class='" + (row.ready ? "ready" : "missing") + "'>" + (row.ready ? "ready" : "missing") + "</td>" +
+          "<td>" + row.owner + "</td>" +
+          "<td><code>" + row.producer + "</code></td>";
+        tbody.appendChild(tr);
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
