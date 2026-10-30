@@ -13,6 +13,7 @@ class HealthResponse(BaseModel):
 class AgentResponse(BaseModel):
     peas: dict[str, str]
     environment: dict[str, str]
+    dimensions: dict[str, str]
     disclaimer: str
     snapshot_date: str
 

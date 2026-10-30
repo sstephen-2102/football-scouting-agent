@@ -33,3 +33,22 @@ ENVIRONMENT_NOTES = {
     "values": "mixed discrete slots and continuous EUR",
     "agents": "single-agent (competing clubs are not modeled)",
 }
+
+# Course Module 1: ten environment dimensions (Russell & Norvig task-environment axes).
+ENVIRONMENT_DIMENSIONS = {
+    "observability": "partially observable — wages, injuries, and true bids are hidden",
+    "agents": "single-agent for the course; rival clubs are not modeled as agents",
+    "determinism": "stochastic — form, injuries, and Transfermarkt revisions are noisy",
+    "episode": "sequential — budget spent on one signing is gone for the next",
+    "dynamics": "dynamic in live football; this product simulates a frozen snapshot",
+    "discreteness": "mixed — discrete XI slots and archetypes, continuous EUR values",
+    "known": "known rules for search/MIP; unknown true data-generating process for value",
+    "competitive": "competitive market in reality; treated as a planning problem here",
+    "horizon": "finite transfer window under remaining budget B",
+    "feedback": "delayed and noisy — valuations lag on-pitch output",
+}
+
+
+def ten_environment_dimensions() -> dict[str, str]:
+    """Return the Module 1 ten-dimension score for this scouting agent."""
+    return dict(ENVIRONMENT_DIMENSIONS)

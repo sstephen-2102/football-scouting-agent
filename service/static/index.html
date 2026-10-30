@@ -4,48 +4,178 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Football Scouting Agent</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 2rem auto; max-width: 52rem; line-height: 1.45; }
-    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
-    .muted { color: #666; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-    th, td { border-bottom: 1px solid #ccc; text-align: left; padding: 0.4rem 0.5rem; font-size: 0.92rem; }
-    .ready { color: #0a7; }
-    .missing { color: #b40; }
-    a { color: inherit; }
-  </style>
+  <link rel="stylesheet" href="/static/app.css?v=2">
 </head>
 <body>
-  <h1>Football Scouting Agent</h1>
-  <p class="muted" id="meta">Loading…</p>
-  <p>HTTP API: <a href="/docs">/docs</a> · batch jobs: <code>python -m src.pipeline status</code></p>
-  <p id="disclaimer"></p>
-  <table>
-    <thead><tr><th>Artifact</th><th>State</th><th>Owner</th><th>Producer</th></tr></thead>
-    <tbody id="rows"></tbody>
-  </table>
-  <script>
-    async function load() {
-      const meta = await (await fetch("/v1/meta")).json();
-      const agent = await (await fetch("/v1/agent")).json();
-      const status = await (await fetch("/v1/status")).json();
-      document.getElementById("meta").textContent =
-        meta.dataset + " · snapshot " + meta.snapshot_date + " · Big 5 " + meta.big5.join(", ");
-      document.getElementById("disclaimer").textContent = agent.disclaimer;
-      const tbody = document.getElementById("rows");
-      tbody.replaceChildren();
-      for (const [name, row] of Object.entries(status.artifacts)) {
-        const tr = document.createElement("tr");
-        tr.innerHTML =
-          "<td>" + name + "</td>" +
-          "<td class='" + (row.ready ? "ready" : "missing") + "'>" + (row.ready ? "ready" : "missing") + "</td>" +
-          "<td>" + row.owner + "</td>" +
-          "<td><code>" + row.producer + "</code></td>";
-        tbody.appendChild(tr);
-      }
-    }
-    load();
-  </script>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Football Scouting Agent</h1>
+        <p>AAI-501 sporting-director lab</p>
+      </div>
+      <nav>
+        <div class="nav-group">
+          <h2>Overview</h2>
+          <a href="#/dashboard" data-page="dashboard">Executive Dashboard</a>
+          <a href="#/agent" data-page="agent">Agent (PEAS)</a>
+          <a href="#/data" data-page="data">Data Freeze</a>
+        </div>
+        <div class="nav-group">
+          <h2>Scouting</h2>
+          <a href="#/archetypes" data-page="archetypes">Archetype Lab</a>
+          <a href="#/forecast" data-page="forecast">Forecast Lab</a>
+        </div>
+        <div class="nav-group">
+          <h2>Modeling</h2>
+          <a href="#/experiments" data-page="experiments">Experiment Board</a>
+          <a href="#/scores" data-page="scores">Player Scores</a>
+        </div>
+        <div class="nav-group">
+          <h2>Decisions</h2>
+          <a href="#/search" data-page="search">Search Lab</a>
+          <a href="#/squad" data-page="squad">Squad Builder</a>
+          <a href="#/policy" data-page="policy">Bid Policy</a>
+        </div>
+      </nav>
+      <p style="color:#8aa396;font-size:0.78rem;margin:1.5rem 0.4rem 0;">
+        API: <a href="/docs" style="color:var(--accent)">/docs</a>
+      </p>
+    </aside>
+
+    <main class="main">
+      <section class="page" id="page-dashboard">
+        <h1>Executive Dashboard</h1>
+        <p class="lede">An interactive research lab on Transfermarkt player-scores: archetypes, market-value models, XI search, MIP allocation, and a bid/pass policy. Educational research, not transfer advice.</p>
+        <div class="metrics" id="dash-metrics"></div>
+        <div class="grid-2">
+          <div class="card">
+            <h2>Questions that must have graphs</h2>
+            <ol class="questions" id="research-questions">
+              <li><a href="#/archetypes">Do archetypes differ in value and playing style?</a></li>
+              <li><a href="#/search">Does informed search match or beat uninformed search for XI quality at a node budget?</a></li>
+              <li><a href="#/experiments">Does a tuned GB beat linear regression on next value?</a></li>
+              <li><a href="#/experiments">Does a 6–8 feature scorecard match the full model?</a></li>
+              <li><a href="#/squad">Does MIP under B beat “buy the top predicted values until broke”?</a></li>
+              <li><a href="#/policy">Do bandits/Q-learning improve cumulative undervalued signings vs greedy, same B?</a></li>
+            </ol>
+          </div>
+          <div class="card">
+            <h2>Pipeline artifacts</h2>
+            <table><thead><tr><th>Artifact</th><th>State</th><th>Owner</th></tr></thead><tbody id="dash-artifacts"></tbody></table>
+          </div>
+        </div>
+        <div class="note" id="dash-disclaimer"></div>
+      </section>
+
+      <section class="page" id="page-agent">
+        <h1>Agent (PEAS)</h1>
+        <p class="lede">Module 1 framing. Performance, environment, actuators, sensors, and the ten environment dimensions.</p>
+        <div class="grid-2" id="peas-cards"></div>
+        <div class="card" style="margin-top:0.9rem">
+          <h2>Ten environment dimensions</h2>
+          <table><thead><tr><th>Axis</th><th>This project</th></tr></thead><tbody id="dimension-rows"></tbody></table>
+        </div>
+      </section>
+
+      <section class="page" id="page-data">
+        <h1>Data Freeze</h1>
+        <p class="lede">Big-5 player-seasons, time split, and leakage rules. Raw CSVs stay out of Git.</p>
+        <div class="metrics" id="data-metrics"></div>
+        <div class="note">
+          <h3>Methodology notes</h3>
+          <ul>
+            <li>Time split by season, never a random row split.</li>
+            <li>Do not use <code>players.market_value_in_eur</code> or <code>highest_market_value_in_eur</code> as a same-window feature.</li>
+            <li>Targets come from <code>player_valuations</code> dated after the season cutoff.</li>
+            <li>Minimum 10 appearances in a Big-5 club season (GB1, ES1, IT1, L1, FR1).</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="page" id="page-archetypes">
+        <h1>Archetype Lab</h1>
+        <p class="lede">Member A. Cluster train players from rolling stats without market value in the fit, then profile clusters by later value and position.</p>
+        <div id="archetypes-status"></div>
+        <div class="card">
+          <p>When <code>python -m src.pipeline cluster</code> has written labels, this page will show cluster profiles (goals/90, assists/90, cards/90, minutes, age, later median value).</p>
+        </div>
+        <div class="note"><h3>Methodology notes</h3><ul><li>Fit on train rolling stats only.</li><li>Value is used after the fact to profile clusters, never inside k-means / GMM.</li></ul></div>
+      </section>
+
+      <section class="page" id="page-forecast">
+        <h1>Forecast Lab</h1>
+        <p class="lede">Member A. Weekly Big-5 goals with STL, Holt-Winters, and ARIMA. Optional map into budget <em>B</em>.</p>
+        <div id="forecast-status"></div>
+        <div class="card"><p>When <code>python -m src.pipeline forecast</code> has written <code>budget.json</code>, this page will show holdout MAPE and the implied transfer budget.</p></div>
+        <div class="note"><h3>Methodology notes</h3><ul><li>If the series is unstable, keep <em>B</em> as a user input on Squad Builder and still report the forecast.</li></ul></div>
+      </section>
+
+      <section class="page" id="page-experiments">
+        <h1>Experiment Board</h1>
+        <p class="lede">Member B. R0 ridge, R1 gradient boosting, C1 undervalued classifier, S1 LSTM/1D-CNN. Locked metrics: MAE/RMSE/Spearman and PR AUC / ROC AUC / Brier — not accuracy.</p>
+        <div id="experiments-status"></div>
+        <div class="card"><p>When <code>python -m src.pipeline score</code> has written comparison tables, this page will show R0 vs R1 vs S1 on the locked test seasons.</p></div>
+        <div class="note"><h3>Methodology notes</h3><ul><li>Threshold for “undervalued” is frozen on validation residuals, never retuned on test.</li><li>Portrait CNNs are out of scope.</li></ul></div>
+      </section>
+
+      <section class="page" id="page-scores">
+        <h1>Player Scores</h1>
+        <p class="lede">Look up a predicted next value and P(undervalued) after Member B’s export exists.</p>
+        <div id="scores-status"></div>
+        <form id="scores-form">
+          <label>Player ID <input name="player_id" type="number" value="418560" required></label>
+          <button type="submit">Score player</button>
+        </form>
+        <div id="scores-result"></div>
+      </section>
+
+      <section class="page" id="page-search">
+        <h1>Search Lab</h1>
+        <p class="lede">Member C. Uninformed vs informed XI search. State = filled slots; heuristic = predicted XI quality.</p>
+        <div id="search-status"></div>
+        <form id="search-form">
+          <label>Club ID <input name="club_id" type="number" value="11" required></label>
+          <label>Season start year <input name="season" type="number" value="2024" required></label>
+          <label>Shortlist player IDs (comma-separated, 11–40)
+            <textarea name="shortlist" rows="3">418560,371998,38253,88755,35747,69633,148455,8198,105470,4512,22367</textarea>
+          </label>
+          <button type="submit">Search XI</button>
+        </form>
+        <div id="search-result"></div>
+        <div class="note"><h3>Methodology notes</h3><ul><li>Compare BFS/random against greedy/A* at a node expansion cap.</li></ul></div>
+      </section>
+
+      <section class="page" id="page-squad">
+        <h1>Squad Builder</h1>
+        <p class="lede">Member C. MIP under budget <em>B</em> versus greedy “buy the top predicted values until broke.”</p>
+        <div id="squad-status"></div>
+        <form id="squad-form">
+          <label>Club ID <input name="club_id" type="number" value="11" required></label>
+          <label>Season start year <input name="season" type="number" value="2024" required></label>
+          <label>Budget EUR <input name="budget_eur" type="number" min="1" step="1000000" value="80000000" required></label>
+          <button type="submit">Allocate squad</button>
+        </form>
+        <div id="squad-result"></div>
+      </section>
+
+      <section class="page" id="page-policy">
+        <h1>Bid Policy</h1>
+        <p class="lede">Member C. Bid or pass under remaining funds. Compare ε-greedy, UCB, Q-learning, and greedy-by-undervalued-score.</p>
+        <div id="policy-status"></div>
+        <form id="policy-form">
+          <label>Player ID <input name="player_id" type="number" value="418560" required></label>
+          <label>Remaining budget EUR <input name="remaining_budget_eur" type="number" min="0" value="25000000" required></label>
+          <label>Position hole
+            <select name="position_hole">
+              <option>ST</option><option>CM</option><option>CB</option><option>GK</option><option>RW</option><option>LW</option>
+            </select>
+          </label>
+          <button type="submit">Decide bid/pass</button>
+        </form>
+        <div id="policy-result"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js?v=2"></script>
 </body>
 </html>

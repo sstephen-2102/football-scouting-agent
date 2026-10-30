@@ -20,6 +20,47 @@ MIN_APPEARANCES = 10
 RANDOM_STATE = 42
 TARGET_VALUE_UPLIFT = 0.20
 
+# Rolling stats allowed inside the cluster *fit*. Never add a value column here.
+CLUSTER_FEATURE_COLUMNS = (
+    "minutes",
+    "goals_per90",
+    "assists_per90",
+    "yellow_per90",
+    "red_per90",
+    "age",
+    "height_in_cm",
+)
+
+FORBIDDEN_VALUE_COLUMNS = (
+    "market_value_in_eur",
+    "highest_market_value_in_eur",
+)
+
+XI_SLOTS = (
+    "GK",
+    "RB",
+    "RCB",
+    "LCB",
+    "LB",
+    "CDM",
+    "CM",
+    "CAM",
+    "RW",
+    "ST",
+    "LW",
+)
+
+POSITION_MINIMA = {"GK": 1, "DEF": 4, "MID": 3, "FWD": 3}
+
+APPEARANCE_SEQUENCE_FEATURES = (
+    "minutes_played",
+    "goals",
+    "assists",
+    "yellow_cards",
+    "red_cards",
+)
+SEQUENCE_WINDOW = 10
+
 KAGGLE_TABLES = (
     "appearances",
     "club_games",

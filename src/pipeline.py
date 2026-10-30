@@ -3,20 +3,29 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
+from pathlib import Path
 
 from src.agent.literature import write_references
 from src.artifacts import artifact_status
+from src.cluster.archetypes import export_archetypes
+from src.common.exceptions import NotBuiltError
 from src.data.download import download_kaggle_dataset
+from src.data.seasons import export_player_season_split
+from src.forecast.timeseries import export_forecast
+from src.modeling.value import export_player_scores
+from src.optimize.squad import export_squad
+from src.policy.bid import export_policy
+from src.search.xi import export_best_xi
 
-
-COMMANDS_NOT_BUILT = {
-    "build-seasons": "Assemble player-season table and freeze the time split.",
-    "cluster": "Fit archetypes on train stats (no market value in the fit).",
-    "forecast": "STL / Holt-Winters / ARIMA weekly series → budget.json.",
-    "score": "Train value models and write player_scores.parquet.",
-    "search-xi": "Uninformed vs informed XI search.",
-    "allocate": "Simplex toy LP plus MIP squad under budget B.",
-    "policy": "Bandit / Q-learning bid-pass policy.",
+EXPORTS: dict[str, Callable[..., Path]] = {
+    "build-seasons": export_player_season_split,
+    "cluster": export_archetypes,
+    "forecast": export_forecast,
+    "score": export_player_scores,
+    "search-xi": export_best_xi,
+    "allocate": export_squad,
+    "policy": export_policy,
 }
 
 
@@ -33,7 +42,7 @@ def main() -> None:
     )
     parser.add_argument(
         "command",
-        choices=["status", "download", "references", *COMMANDS_NOT_BUILT],
+        choices=["status", "download", "references", *EXPORTS],
     )
     arguments = parser.parse_args()
     if arguments.command == "status":
@@ -46,11 +55,11 @@ def main() -> None:
     if arguments.command == "references":
         print(f"Wrote {write_references()}")
         return
-    raise SystemExit(
-        f"{arguments.command} is not implemented yet. "
-        f"{COMMANDS_NOT_BUILT[arguments.command]} "
-        "See docs/contracts.md for the owning member."
-    )
+    try:
+        written = EXPORTS[arguments.command]()
+    except NotBuiltError as exc:
+        raise SystemExit(str(exc)) from exc
+    print(f"Wrote {written}")
 
 
 if __name__ == "__main__":

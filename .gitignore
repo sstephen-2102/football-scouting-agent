@@ -14,3 +14,4 @@ data/*.duckdb
 outputs/models/
 *.pkl
 .ipynb_checkpoints/
+.streamlit/secrets.toml

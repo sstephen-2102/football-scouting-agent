@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from service.deps import current_status
 from service.schemas import AgentResponse, HealthResponse, MetaResponse, StatusResponse
-from src.agent.peas import DISCLAIMER, ENVIRONMENT_NOTES, PEAS
+from src.agent.peas import DISCLAIMER, ENVIRONMENT_NOTES, PEAS, ten_environment_dimensions
 from src.common.config import (
     BIG5_COMPETITION_IDS,
     KAGGLE_DATASET,
@@ -28,6 +28,7 @@ def agent() -> AgentResponse:
     return AgentResponse(
         peas=PEAS,
         environment=ENVIRONMENT_NOTES,
+        dimensions=ten_environment_dimensions(),
         disclaimer=DISCLAIMER,
         snapshot_date=SNAPSHOT_DATE,
     )

@@ -4,7 +4,7 @@
 **Working title:** A Football Scouting Agent on Transfermarkt  
 **Team size:** 3  
 **Dataset:** [davidcariboo/player-scores](https://www.kaggle.com/datasets/davidcariboo/player-scores) (CC0; freeze 6 July 2026)  
-**Status:** specification only — implement after names are on A/B/C and a public GitHub exists
+**Status:** signatures frozen in `src/`; implement bodies after names are on A/B/C
 
 This document is the team specification. It restates the AAI-501 brief, maps every weekly learning outcome onto **one** sporting-director agent, and assigns build work.
 
@@ -48,7 +48,7 @@ Educational research, not betting advice and not a claim that Transfermarkt valu
 5. Search a starting XI: state = which of 11 slots are filled; compare BFS/random vs greedy/A* (heuristic = predicted XI quality).
 6. Solve a MIP: maximize predicted squad quality subject to *B*, 11 starters, min/max per position.
 7. Learn a bid/pass policy (bandit + Q-learning) vs greedy-by-undervalued-score under remaining *B*.
-8. The HTTP service exposes PEAS, disclaimers, scores, XI, allocation, and bid/pass. Comparison graphs are files under `outputs/figures/`, not notebooks.
+8. Streamlit and FastAPI both expose PEAS, disclaimers, scores, XI, allocation, and bid/pass. Comparison graphs are files under `outputs/figures/`, not notebooks.
 
 ### 2.3 Questions that must have graphs
 
@@ -69,7 +69,7 @@ Negative results are in scope.
 - Training on all 1.89M appearance rows without aggregating to player-season
 - Resubmitting AAI-500 diabetes materials
 - DQN robotics, NLP
-- Jupyter notebooks or Streamlit apps (the product is the FastAPI service)
+- Jupyter notebooks. Streamlit is the instructor-facing lab; FastAPI remains the product API.
 
 ---
 
@@ -88,6 +88,8 @@ Negative results are in scope.
 **One pipeline:** observe stats (M1) → forecast load/budget (M5) → archetypes (M4) → score value (M4, M6) → search XI (M2) → allocate *B* (M3) → bid/pass (M7).
 
 ---
+
+Function-level implementation definitions (inputs, algorithms, artifact schemas, tests) are in [`IMPLEMENTATION_DEFINITIONS.md`](IMPLEMENTATION_DEFINITIONS.md).
 
 ## 4. Implementation by member
 

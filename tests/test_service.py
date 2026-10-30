@@ -20,6 +20,7 @@ def test_meta_and_agent() -> None:
     agent = client.get("/v1/agent").json()
     assert "performance" in agent["peas"]
     assert "not transfer advice" in agent["disclaimer"]
+    assert len(agent["dimensions"]) == 10
 
 
 def test_status_lists_all_artifacts() -> None:
@@ -47,3 +48,21 @@ def test_index_page_is_served() -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert b"Football Scouting Agent" in response.content
+    for label in (
+        b"Executive Dashboard",
+        b"Archetype Lab",
+        b"Experiment Board",
+        b"Search Lab",
+        b"Squad Builder",
+        b"Bid Policy",
+    ):
+        assert label in response.content
+
+
+def test_lab_assets_are_served() -> None:
+    css = client.get("/static/app.css")
+    script = client.get("/static/app.js")
+    assert css.status_code == 200
+    assert "sidebar" in css.text
+    assert script.status_code == 200
+    assert "ARTIFACT_FOR_PAGE" in script.text

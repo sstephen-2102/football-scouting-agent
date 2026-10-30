@@ -1,6 +1,6 @@
 # Scouting agent (Module 1)
 
-Fill names and the 10 course dimensions after Week 1. The live PEAS payload is `src/agent/peas.py`, served at `GET /v1/agent`.
+The live PEAS payload and the ten environment dimensions are `src/agent/peas.py`, served at `GET /v1/agent`. Fill teammate names after Week 1.
 
 ## PEAS
 
@@ -11,9 +11,9 @@ Fill names and the 10 course dimensions after Week 1. The live PEAS payload is `
 | **Actuators** | Assign archetype; emit value score; propose XI; allocate budget; bid or pass |
 | **Sensors** | Appearances, games, historical valuations, transfers, club and player attributes dated on or before the cutoff |
 
-## Environment sketch (complete with the course’s 10 dimensions in Week 1)
+## Environment sketch (ten dimensions)
 
-Partially observable (we do not see wages, injuries, or true bids). Stochastic (injuries, form). Sequential (budget spent now is gone later). Dynamic in real football, but we simulate on a frozen snapshot. Mixed discrete (position slots) and continuous (EUR). Single-agent for the course (we do not model competing clubs as agents).
+The function `ten_environment_dimensions()` in `src/agent/peas.py` is the source of truth. Summary: partially observable (wages, injuries, and true bids are hidden); single-agent for the course; stochastic; sequential; dynamic in live football but simulated on a frozen snapshot; mixed discrete slots and continuous EUR; known search/MIP rules with an unknown value process; competitive market treated as a planning problem; finite window under budget *B*; delayed noisy valuation feedback.
 
 ## Disclaimer
 
