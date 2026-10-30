@@ -21,11 +21,11 @@ This document is the team specification. It restates the AAI-501 brief, maps eve
 | Tuning and/or multiple families | Validation-set grids; uninformed vs informed search; ε-greedy vs UCB vs Q vs greedy-by-value |
 | Feature selection / interpret what was learned | Feature-subset search for a 6–8 field value scorecard; permutation importance |
 | Visualization | Archetype profiles, forecast decomposition, ROC/PR or calibration, search nodes vs quality, squad allocation, regret |
-| GitHub, README, PEP 8 | New public repo (this folder). Not the AAI-500 diabetes GitHub |
+| GitHub, README, PEP 8 | Public repo for this project: `football-scouting-agent` |
 | Proposal end of Week 3 | Section 10.1 |
 | ~10-page APA 7 paper + code, Week 7 | Section 10.2 |
 | 20–30 min recording, equal speaking time | Section 10.3 |
-| Do not reuse a problem already analyzed in *this* course | Football scouting is not an AAI-501 homework problem and is not the AAI-500 BRFSS study |
+| Do not reuse a problem already analyzed in *this* course | Football scouting is not an AAI-501 homework problem |
 
 ---
 
@@ -67,7 +67,6 @@ Negative results are in scope.
 - CNN on player *portraits* to predict value (faces are not a scouting signal we will defend)
 - Using `players.market_value_in_eur` or `highest_market_value_in_eur` as a feature for the same period’s target
 - Training on all 1.89M appearance rows without aggregating to player-season
-- Resubmitting AAI-500 diabetes materials
 - DQN robotics, NLP
 - Jupyter notebooks. Streamlit is the instructor-facing lab; FastAPI remains the product API.
 
@@ -240,7 +239,7 @@ Add exact Kaggle version and retrieval date in the final paper.
 ## 9. Immediate next steps
 
 1. Put teammate names on A / B / C in `docs/contracts.md`.
-2. Create a **public GitHub** repository from this folder (course requirement; do not use the AAI-500 diabetes remote).
+2. Keep the GitHub repository **public** (course requirement).
 3. Run `python -m src.data.download` locally; fill `outputs/data_manifest.json`.
 4. Freeze `outputs/splits/player_season_split.parquet` in Week 2.
 5. Submit the Week 3 proposal from §2, §3, and §8.
