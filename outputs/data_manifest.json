@@ -1,0 +1,67 @@
+{
+  "dataset": "davidcariboo/player-scores",
+  "files": [
+    {
+      "bytes": 198398405,
+      "name": "appearances.csv",
+      "sha256": "c4ba5327f9005e4a9914c0f78c3b07132ef2cf1a4babda379bbf54ffd207ebec"
+    },
+    {
+      "bytes": 14748080,
+      "name": "club_games.csv",
+      "sha256": "d840a80e58b47423bdcdd6c6770c15fb477b31bfee356a52eb4b1a9c5c64195e"
+    },
+    {
+      "bytes": 208374,
+      "name": "clubs.csv",
+      "sha256": "26dc6113d8206246145add2c7a318a657b3995fccdb0c9004d65ca6ae5e5968b"
+    },
+    {
+      "bytes": 12247,
+      "name": "competitions.csv",
+      "sha256": "fadaf2992e01f8450d8d419006b0f533bbd6742163f4a0c5ee6a157fae7b791e"
+    },
+    {
+      "bytes": 15058,
+      "name": "countries.csv",
+      "sha256": "d694bb609efa95b90283f72fbf8f849713be6df4d3f79b34604121231424a5fe"
+    },
+    {
+      "bytes": 179098694,
+      "name": "game_events.csv",
+      "sha256": "93a4938b5ef31d4234590d3897b9c7baddfa13a1a392e00a86645b2a2221c535"
+    },
+    {
+      "bytes": 415978884,
+      "name": "game_lineups.csv",
+      "sha256": "06af8b0fcffc675eb2dc6363f185caad0ffb6835d018004dcc9a0eb1c5a50145"
+    },
+    {
+      "bytes": 28965132,
+      "name": "games.csv",
+      "sha256": "c24da068cc7444e1e345c274d8d2320226cafc02186a17de2cf766eccb8ae79b"
+    },
+    {
+      "bytes": 32980,
+      "name": "national_teams.csv",
+      "sha256": "e0fa44d795491eba6277812d58a4b0cebd3db98446dd10442eb984b8c0a0c0ed"
+    },
+    {
+      "bytes": 39647280,
+      "name": "player_valuations.csv",
+      "sha256": "9caf4ff707905f71463a04253c5ac640b3ff9575e07912fd7c50365697efa47d"
+    },
+    {
+      "bytes": 19624138,
+      "name": "players.csv",
+      "sha256": "b94216cf2ff8777b5eddd4fd91402c19e757b366fbdeb4f4437580c302ff2d66"
+    },
+    {
+      "bytes": 18112063,
+      "name": "transfers.csv",
+      "sha256": "5331311c6ec68c2c7a9c22979aff7d6f6fd2cefd96201d1bcfb35998a9d244ae"
+    }
+  ],
+  "raw_dir": "/Users/sanjayvarghese/Cursor Projects/MS_AAI/AAI-501/football-scouting-agent/data/raw",
+  "snapshot_date": "2026-07-06"
+}

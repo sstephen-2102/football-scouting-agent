@@ -51,7 +51,9 @@ def test_stub_signature_and_not_built(function, owner, required) -> None:
 def test_registry_covers_unique_callables() -> None:
     names = [function.__name__ for function, _, _ in STUBS]
     assert len(names) == len(set(names))
-    assert len(STUBS) >= 70
+    assert len(STUBS) >= 50
+    assert "load_table" not in names
+    assert "build_player_season_table" not in names
 
 
 def test_implemented_contracts() -> None:

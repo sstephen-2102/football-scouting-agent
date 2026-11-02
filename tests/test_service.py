@@ -17,6 +17,9 @@ def test_meta_and_agent() -> None:
     meta = client.get("/v1/meta").json()
     assert meta["dataset"] == "davidcariboo/player-scores"
     assert meta["big5"] == ["GB1", "ES1", "IT1", "L1", "FR1"]
+    assert meta["team"]["member_c"] == "Sanjay Varghese Stephen"
+    assert meta["team"]["member_a"] == "Arunava Banerjee"
+    assert meta["team"]["member_b"] == "Binish Hamdani"
     agent = client.get("/v1/agent").json()
     assert "performance" in agent["peas"]
     assert "not transfer advice" in agent["disclaimer"]

@@ -1,6 +1,8 @@
 # Scouting agent (Module 1)
 
-The live PEAS payload and the ten environment dimensions are `src/agent/peas.py`, served at `GET /v1/agent`. Fill teammate names after Week 1.
+The live PEAS payload and the ten environment dimensions are `src/agent/peas.py`, served at `GET /v1/agent`.
+
+**Team:** Arunava Banerjee (A — archetypes/forecast), Binish Hamdani (B — value models), Sanjay Varghese Stephen (C — search/MIP/policy).
 
 ## PEAS
 

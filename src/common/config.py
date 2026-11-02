@@ -20,6 +20,13 @@ MIN_APPEARANCES = 10
 RANDOM_STATE = 42
 TARGET_VALUE_UPLIFT = 0.20
 
+TEAM = {
+    "member_a": "Arunava Banerjee",
+    "member_b": "Binish Hamdani",
+    "member_c": "Sanjay Varghese Stephen",
+    "shared": "team",
+}
+
 # Rolling stats allowed inside the cluster *fit*. Never add a value column here.
 CLUSTER_FEATURE_COLUMNS = (
     "minutes",

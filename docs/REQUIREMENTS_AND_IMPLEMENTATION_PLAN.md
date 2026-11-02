@@ -4,7 +4,8 @@
 **Working title:** A Football Scouting Agent on Transfermarkt  
 **Team size:** 3  
 **Dataset:** [davidcariboo/player-scores](https://www.kaggle.com/datasets/davidcariboo/player-scores) (CC0; freeze 6 July 2026)  
-**Status:** signatures frozen in `src/`; implement bodies after names are on A/B/C
+**Status:** signatures frozen in `src/`; names on A/B/C; implement function bodies next  
+**Team:** Arunava Banerjee (A), Binish Hamdani (B), Sanjay Varghese Stephen (C)
 
 This document is the team specification. It restates the AAI-501 brief, maps every weekly learning outcome onto **one** sporting-director agent, and assigns build work.
 
@@ -94,7 +95,7 @@ Function-level implementation definitions (inputs, algorithms, artifact schemas,
 
 If you are the only person from another USD project, still take a full vertical here. Nobody is “just slides.”
 
-### Member A — Agent, archetypes, forecast
+### Member A — Arunava Banerjee — Agent, archetypes, forecast
 
 **Build**
 
@@ -110,7 +111,7 @@ If you are the only person from another USD project, still take a full vertical 
 
 **Paper / talk:** problem, PEAS, data freeze, clustering, forecast demo (~8–10 min).
 
-### Member B — Value models and sequences
+### Member B — Binish Hamdani — Value models and sequences
 
 **Build**
 
@@ -130,7 +131,7 @@ If you are the only person from another USD project, still take a full vertical 
 
 **Paper / talk:** metrics, R0 vs R1 vs S1, why not portrait CNNs (~8–10 min).
 
-### Member C — Search, allocate, act
+### Member C — Sanjay Varghese Stephen — Search, allocate, act
 
 **Build**
 
@@ -147,7 +148,7 @@ If you are the only person from another USD project, still take a full vertical 
 
 ## 5. Week-by-week (aligned to AAI-501)
 
-| Week | Course | A | B | C |
+| Week | Course | A (Arunava) | B (Binish) | C (Sanjay) |
 |---|---|---|---|---|
 | **1** | Agents, lit review | PEAS in code; `python -m src.agent.literature` | Inspect schema; draft feature list | GitHub, FastAPI shell, instructor-facing README |
 | **2** | Search | Clustering skeleton | Player-season table + split parquet | XI graph; BFS vs greedy on a 30-player toy |
@@ -185,14 +186,14 @@ No extensions on Week 7.
 
 | Approx. pages | Content | Lead |
 |---|---|---|
-| 1 | Purpose, agent, related work | A + C |
-| 1 | Data, freeze, leakage | A |
-| 1.5 | Clustering | A |
-| 1 | Forecast | A |
-| 2 | Value models, sequence DL, metrics | B |
-| 1.5 | XI search | C |
-| 1 | Simplex + MIP | C |
-| 1.5 | MDP / bandits / Q | C |
+| 1 | Purpose, agent, related work | Arunava + Sanjay |
+| 1 | Data, freeze, leakage | Arunava |
+| 1.5 | Clustering | Arunava |
+| 1 | Forecast | Arunava |
+| 2 | Value models, sequence DL, metrics | Binish |
+| 1.5 | XI search | Sanjay |
+| 1 | Simplex + MIP | Sanjay |
+| 1.5 | MDP / bandits / Q | Sanjay |
 | rest | Limits, next steps | all |
 | Appendix | Contributions | each |
 
@@ -200,11 +201,11 @@ No extensions on Week 7.
 
 | Block | Speaker |
 |---|---|
-| Problem, PEAS, data | A |
-| Archetype Lab + forecast demo | A |
-| Experiment Board, sequence vs tabular | B |
-| Search, MIP, bid policy demo | C |
-| Limits, next step, close | C then B |
+| Problem, PEAS, data | Arunava |
+| Archetype Lab + forecast demo | Arunava |
+| Experiment Board, sequence vs tabular | Binish |
+| Search, MIP, bid policy demo | Sanjay |
+| Limits, next step, close | Sanjay then Binish |
 
 Upload the recording; put the URL on the title slide. One member submits Canvas.
 
@@ -238,7 +239,7 @@ Add exact Kaggle version and retrieval date in the final paper.
 
 ## 9. Immediate next steps
 
-1. Put teammate names on A / B / C in `docs/contracts.md`.
+1. Invite Binish and Arunava as GitHub collaborators on `football-scouting-agent`.
 2. Keep the GitHub repository **public** (course requirement).
 3. Run `python -m src.data.download` locally; fill `outputs/data_manifest.json`.
 4. Freeze `outputs/splits/player_season_split.parquet` in Week 2.

@@ -7,6 +7,7 @@ from src.common.config import (
     MIN_APPEARANCES,
     RANDOM_STATE,
     SNAPSHOT_DATE,
+    TEAM,
     TEST_SEASONS,
     TRAIN_SEASONS,
     VAL_SEASONS,
@@ -32,3 +33,9 @@ def test_cluster_fit_excludes_market_value() -> None:
     assert "market_value_in_eur" not in CLUSTER_FEATURE_COLUMNS
     assert "market_value_in_eur" in FORBIDDEN_VALUE_COLUMNS
     assert len(XI_SLOTS) == 11
+
+
+def test_team_names() -> None:
+    assert TEAM["member_a"] == "Arunava Banerjee"
+    assert TEAM["member_b"] == "Binish Hamdani"
+    assert TEAM["member_c"] == "Sanjay Varghese Stephen"

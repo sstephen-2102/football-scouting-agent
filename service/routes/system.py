@@ -10,6 +10,7 @@ from src.common.config import (
     KAGGLE_DATASET,
     MIN_APPEARANCES,
     SNAPSHOT_DATE,
+    TEAM,
     TEST_SEASONS,
     TRAIN_SEASONS,
     VAL_SEASONS,
@@ -44,6 +45,7 @@ def meta() -> MetaResponse:
         val_seasons=list(VAL_SEASONS),
         test_seasons=list(TEST_SEASONS),
         min_appearances=MIN_APPEARANCES,
+        team=dict(TEAM),
     )
 
 

@@ -99,11 +99,11 @@ Missing artifacts return **503** with `owner` and the producer command.
 
 ## Team
 
-| Role | Owns |
-|---|---|
-| Member A | PEAS, archetypes, forecast, `GET /v1/archetypes`, `GET /v1/forecast` |
-| Member B | Value models, sequence net, `GET /v1/scores/{id}` |
-| Member C | XI search, MIP, policy, remaining POST routes, service wiring |
+| Role | Name | Owns |
+|---|---|---|
+| Member A | Arunava Banerjee | PEAS, archetypes, forecast, `GET /v1/archetypes`, `GET /v1/forecast` |
+| Member B | Binish Hamdani | Value models, sequence net, `GET /v1/scores/{id}` |
+| Member C | Sanjay Varghese Stephen | XI search, MIP, policy, remaining POST routes, service wiring |
 
 ## Documents
 

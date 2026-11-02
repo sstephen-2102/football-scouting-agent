@@ -26,6 +26,7 @@ class MetaResponse(BaseModel):
     val_seasons: list[int]
     test_seasons: list[int]
     min_appearances: int
+    team: dict[str, str]
 
 
 class ArtifactRow(BaseModel):

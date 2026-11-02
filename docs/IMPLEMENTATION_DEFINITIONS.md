@@ -473,4 +473,4 @@ FastAPI 503 until the file exists remains correct.
 | Tests | pytest green on fixtures; ruff clean |
 | Course | Week 3 proposal; Week 7 paper, GitHub, 20–30 min equal-time recording |
 
-Names on A/B/C in `docs/contracts.md` are still TBD until the instructor groups you.
+**Team:** A Arunava Banerjee · B Binish Hamdani · C Sanjay Varghese Stephen. Swap only by PR against `docs/contracts.md`.

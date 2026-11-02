@@ -1,6 +1,12 @@
 # Frozen contracts
 
-Change these only by PR after the whole team agrees. Assign real names to A/B/C after the instructor groups you.
+Change these only by PR after the whole team agrees.
+
+| Role | Name |
+|---|---|
+| Member A | Arunava Banerjee |
+| Member B | Binish Hamdani |
+| Member C | Sanjay Varghese Stephen |
 
 The product API is a **standalone FastAPI service**. The instructor-facing lab is Streamlit (`streamlit run streamlit_app.py`). Domain code lives in `src/`. Batch jobs write `outputs/`. Neither UI trains.
 
@@ -36,11 +42,11 @@ Missing files → HTTP **503** with `owner` and `producer`.
 
 ## Module owners
 
-| Member | Course weeks | Packages | Routes |
-|---|---|---|---|
-| A | 1, 4 unsupervised, 5 | `src/agent`, `src/cluster`, `src/forecast` | `/v1/agent`, `/v1/archetypes`, `/v1/forecast` |
-| B | 3 metrics, 4 supervised, 6 | `src/modeling` | `/v1/scores/{player_id}` |
-| C | 2, 3 LP/MIP, 7 | `src/search`, `src/optimize`, `src/policy` | `/v1/search/xi`, `/v1/squad/allocate`, `/v1/policy/bid` |
+| Member | Name | Course weeks | Packages | Routes |
+|---|---|---|---|---|
+| A | Arunava Banerjee | 1, 4 unsupervised, 5 | `src/agent`, `src/cluster`, `src/forecast` | `/v1/agent`, `/v1/archetypes`, `/v1/forecast` |
+| B | Binish Hamdani | 3 metrics, 4 supervised, 6 | `src/modeling` | `/v1/scores/{player_id}` |
+| C | Sanjay Varghese Stephen | 2, 3 LP/MIP, 7 | `src/search`, `src/optimize`, `src/policy` | `/v1/search/xi`, `/v1/squad/allocate`, `/v1/policy/bid` |
 
 Shared and frozen: `src/data`, `src/common`, `service/` shell.
 

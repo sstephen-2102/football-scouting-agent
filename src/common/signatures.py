@@ -1,7 +1,8 @@
 """Registry of unimplemented function contracts.
 
 Members implement the body of these callables. Changing a signature requires a
-team PR against `docs/contracts.md`.
+team PR against `docs/contracts.md`. Shared data contracts in `src/data/` are
+implemented and are no longer listed here.
 """
 
 from __future__ import annotations
@@ -17,28 +18,6 @@ from src.cluster.archetypes import (
     fit_kmeans,
     profile_archetypes,
     select_k,
-)
-from src.data.leakage import (
-    assert_no_leakage,
-    assert_split_is_time_ordered,
-    drop_snapshot_value_columns,
-)
-from src.data.quality import generate_data_quality_report, write_data_manifest
-from src.data.seasons import (
-    assign_time_split,
-    attach_next_value_target,
-    build_player_season_table,
-    export_player_season_split,
-    filter_big5,
-)
-from src.data.tables import (
-    load_appearances,
-    load_clubs,
-    load_games,
-    load_players,
-    load_table,
-    load_transfers,
-    load_valuations,
 )
 from src.forecast.timeseries import (
     build_weekly_goals_series,
@@ -102,23 +81,6 @@ from src.search.xi import (
 
 # (callable, owner, required parameter names)
 STUBS: list[tuple[Callable[..., object], str, tuple[str, ...]]] = [
-    (load_table, "shared", ("name",)),
-    (load_appearances, "shared", ()),
-    (load_games, "shared", ()),
-    (load_players, "shared", ()),
-    (load_valuations, "shared", ()),
-    (load_clubs, "shared", ()),
-    (load_transfers, "shared", ()),
-    (filter_big5, "shared", ("appearances", "games")),
-    (build_player_season_table, "shared", ("appearances", "games", "players", "clubs")),
-    (attach_next_value_target, "shared", ("player_seasons", "valuations")),
-    (assign_time_split, "shared", ("player_seasons",)),
-    (export_player_season_split, "shared", ()),
-    (drop_snapshot_value_columns, "shared", ("players",)),
-    (assert_no_leakage, "shared", ("frame", "cutoff")),
-    (assert_split_is_time_ordered, "shared", ("player_seasons",)),
-    (generate_data_quality_report, "shared", ("player_seasons",)),
-    (write_data_manifest, "shared", ()),
     (cluster_feature_matrix, "member_a", ("train",)),
     (fit_kmeans, "member_a", ("features", "k")),
     (fit_gmm, "member_a", ("features", "k")),

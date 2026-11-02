@@ -1,0 +1,54 @@
+{
+  "counts_by_league": {
+    "ES1": 3275,
+    "FR1": 3036,
+    "GB1": 3177,
+    "IT1": 3322,
+    "L1": 2851
+  },
+  "counts_by_season": {
+    "2018": 1913,
+    "2019": 1912,
+    "2020": 2012,
+    "2021": 2034,
+    "2022": 1987,
+    "2023": 1806,
+    "2024": 1943,
+    "2025": 2054
+  },
+  "counts_by_split": {
+    "descriptive": 2054,
+    "test": 1943,
+    "train": 9858,
+    "val": 1806
+  },
+  "dropped_below_min_appearances": 0,
+  "missingness": {
+    "age": 3,
+    "assists": 0,
+    "assists_per90": 0,
+    "club_id": 0,
+    "competition_id": 0,
+    "foot": 10,
+    "goals": 0,
+    "goals_per90": 0,
+    "height_in_cm": 1,
+    "log_next_value": 2054,
+    "minutes": 0,
+    "n_appearances": 0,
+    "next_value_eur": 2054,
+    "player_id": 0,
+    "position": 0,
+    "prev_value_eur": 3,
+    "red_cards": 0,
+    "red_per90": 0,
+    "season": 0,
+    "split": 0,
+    "sub_position": 2,
+    "yellow_cards": 0,
+    "yellow_per90": 0
+  },
+  "n_players": 5022,
+  "n_rows": 15661,
+  "n_seasons": 8
+}

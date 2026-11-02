@@ -8,12 +8,16 @@ from src.artifacts import artifact_status
 from src.pipeline import EXPORTS, main
 
 
-def test_all_artifacts_start_missing() -> None:
+def test_artifact_owners_and_member_stubs_missing() -> None:
     status = artifact_status()
+    assert status["split"]["owner"] == "shared"
     assert status["archetypes"]["owner"] == "member_a"
     assert status["scores"]["owner"] == "member_b"
     assert status["policy"]["owner"] == "member_c"
-    assert status["split"]["ready"] is False
+    # Member A/B/C jobs stay stubs until each owner lands their export.
+    assert status["archetypes"]["ready"] is False
+    assert status["scores"]["ready"] is False
+    assert status["policy"]["ready"] is False
 
 
 def test_export_commands_are_wired() -> None:
