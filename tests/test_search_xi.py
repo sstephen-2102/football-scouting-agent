@@ -1,4 +1,4 @@
-"""Toy XI search tests (no Kaggle, no scores artifact)."""
+"""Synthetic XI search tests (no Kaggle, no scores artifact)."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from src.search.xi import (
 )
 
 
-def _toy_players() -> pd.DataFrame:
+def _synthetic_players() -> pd.DataFrame:
     rows = [
         (1, "Goalkeeper", "Goalkeeper", 10.0),
         (2, "Defender", "Right-Back", 8.0),
@@ -44,7 +44,7 @@ def _toy_players() -> pd.DataFrame:
 
 
 def test_fixed_order_actions_and_goal() -> None:
-    players = _toy_players()
+    players = _synthetic_players()
     state = initial_xi_state(list(players["player_id"]))
     actions = legal_actions(state, players)
     assert actions
@@ -57,7 +57,7 @@ def test_fixed_order_actions_and_goal() -> None:
 
 
 def test_bfs_and_astar_fill_xi() -> None:
-    players = _toy_players()
+    players = _synthetic_players()
     scores = players[["player_id", "pred_value"]]
     state = initial_xi_state(list(players["player_id"]))
 
