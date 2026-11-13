@@ -14,7 +14,6 @@ from src.search.xi import (
     is_goal,
     legal_actions,
     uninformed_search,
-    xi_quality,
 )
 
 
@@ -56,7 +55,8 @@ def test_fixed_order_actions_and_goal() -> None:
     assert state.assignment[0] is None
 
 
-def test_bfs_and_astar_fill_xi() -> None:
+def test_bfs_and_astar_fill_xi(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr("src.search.xi.OUTPUTS", tmp_path)
     players = _synthetic_players()
     scores = players[["player_id", "pred_value"]]
     state = initial_xi_state(list(players["player_id"]))
@@ -68,8 +68,8 @@ def test_bfs_and_astar_fill_xi() -> None:
     assert len(astar["xi"]) == 11
     assert bfs["quality"] > 0
     assert astar["quality"] >= bfs["quality"] - 1e-9
-    assert astar["quality"] >= bfs["quality"] - 1e-9
 
     summary = compare_search(bfs, astar)
     assert summary["informed_minus_uninformed"] == astar["quality"] - bfs["quality"]
     assert Path(summary["figure_path"]).is_file()
+    assert Path(summary["figure_path"]).is_relative_to(tmp_path)

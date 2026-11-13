@@ -1,21 +1,23 @@
 """Member C — starting-XI state-space search (uninformed vs informed)."""
+
+from __future__ import annotations
+
+from collections import deque
 from dataclasses import dataclass
+from heapq import heappop, heappush
 from pathlib import Path
+from random import Random
 from typing import Any
 
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.common.config import XI_SLOTS
+from src.common.config import OUTPUTS, RANDOM_STATE, XI_SLOTS
 from src.common.exceptions import InvalidParameterError, not_built
 from src.search.positions import player_legal_for_slot
-from collections import deque
-from heapq import heappop, heappush
-from random import Random
-
-from src.common.config import RANDOM_STATE, XI_SLOTS
-import matplotlib.pyplot as plt
-
-from src.common.config import OUTPUTS, RANDOM_STATE, XI_SLOTS
 
 @dataclass(frozen=True, slots=True)
 class XiState:

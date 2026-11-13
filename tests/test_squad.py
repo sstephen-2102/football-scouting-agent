@@ -1,5 +1,7 @@
 """Synthetic MIP vs greedy squad tests."""
 
+from pathlib import Path
+
 import pandas as pd
 
 from src.optimize.squad import (
@@ -34,7 +36,8 @@ def _candidates() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def test_mip_and_greedy_fill_eleven() -> None:
+def test_mip_and_greedy_fill_eleven(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr("src.optimize.squad.OUTPUTS", tmp_path)
     candidates = _candidates()
     budget = 1_000.0
     problem = formulate_squad_mip(candidates, budget)
@@ -46,3 +49,5 @@ def test_mip_and_greedy_fill_eleven() -> None:
     assert mip["quality"] >= greedy["quality"] - 1e-9
     summary = compare_mip_vs_greedy(mip, greedy)
     assert "quality_gap" in summary
+    assert Path(summary["figure_path"]).is_file()
+    assert Path(summary["figure_path"]).is_relative_to(tmp_path)

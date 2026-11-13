@@ -1,3 +1,5 @@
+"""Member C — MIP squad construction under budget B, plus greedy baseline."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,6 +15,7 @@ import pulp
 from src.common.config import OUTPUTS, POSITION_MINIMA
 from src.common.exceptions import InvalidParameterError, not_built
 from src.search.positions import position_group
+
 
 def position_minima() -> dict[str, int]:
     """Minimum starters by group. Change only by team PR."""

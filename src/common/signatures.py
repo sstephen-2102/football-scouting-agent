@@ -2,7 +2,8 @@
 
 Members implement the body of these callables. Changing a signature requires a
 team PR against `docs/contracts.md`. Shared data contracts in `src/data/` are
-implemented and are no longer listed here.
+implemented and are no longer listed here. Implemented Member C helpers are
+also omitted; only remaining export stubs stay registered.
 """
 
 from __future__ import annotations
@@ -47,37 +48,9 @@ from src.modeling.value import (
     label_undervalued,
     predict_player_scores,
 )
-from src.optimize.simplex import simplex
-from src.optimize.squad import (
-    compare_mip_vs_greedy,
-    export_squad,
-    formulate_squad_mip,
-    greedy_spend,
-    solve_squad_mip,
-)
-from src.policy.bid import (
-    compare_policies,
-    decide_bid,
-    epsilon_greedy,
-    export_policy,
-    greedy_by_undervalued,
-    mdp_state,
-    q_learning_update,
-    reward_if_signed,
-    simulate_transfer_window,
-    ucb_action,
-)
-from src.search.xi import (
-    apply_action,
-    compare_search,
-    export_best_xi,
-    informed_search,
-    initial_xi_state,
-    is_goal,
-    legal_actions,
-    uninformed_search,
-    xi_quality,
-)
+from src.optimize.squad import export_squad
+from src.policy.bid import export_policy
+from src.search.xi import export_best_xi
 
 # (callable, owner, required parameter names)
 STUBS: list[tuple[Callable[..., object], str, tuple[str, ...]]] = [
