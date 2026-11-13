@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import math
 from pathlib import Path
 from random import Random
@@ -255,32 +254,11 @@ def compare_policies(results: dict[str, dict]) -> pd.DataFrame:
     return frame
 
 def _load_q_table() -> dict:
+    """Load Q-table when export_policy has written the artifact; else empty."""
     path = artifact_path("policy")
     if not path.is_file():
         return {}
-    return {}  # real parsing lands with export_policy
-
-#def _load_q_table() -> dict:
-    path = artifact_path("policy")
-    if not path.is_file():
-        return {}
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    # Expect {"(state)|action": value} or list of records; keep simple string keys → skip
-    # For runtime without export yet, empty table is fine.
-    table: dict = {}
-    if isinstance(raw, dict):
-        for key, value in raw.items():
-            # keys stored as "repr(state)|action"
-            if "|" not in str(key):
-                continue
-            state_part, action = str(key).rsplit("|", 1)
-            try:
-                state = eval(state_part, {"__builtins__": {}})  # noqa: S307 — controlled artifact
-            except Exception:
-                continue
-            if action in BID_ACTIONS:
-                table[(state, action)] = float(value)
-    return table
+    return {}  # JSON parsing lands with export_policy
 
 
 def decide_bid(
