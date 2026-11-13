@@ -30,7 +30,10 @@ from src.forecast.timeseries import (
     forecast_holdout,
     map_forecast_to_budget,
 )
-from src.modeling.importance import permutation_importance_table, select_scorecard_features
+from src.modeling.importance import (
+    permutation_importance_table,
+    select_scorecard_features,
+)
 from src.modeling.metrics import classification_metrics, regression_metrics
 from src.modeling.sequence import (
     compare_sequence_to_tabular,

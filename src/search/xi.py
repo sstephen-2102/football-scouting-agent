@@ -19,6 +19,7 @@ from src.common.config import OUTPUTS, RANDOM_STATE, XI_SLOTS
 from src.common.exceptions import InvalidParameterError, not_built
 from src.search.positions import player_legal_for_slot
 
+
 @dataclass(frozen=True, slots=True)
 class XiState:
     """Hashable XI search state.
