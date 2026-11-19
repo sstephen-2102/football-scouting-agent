@@ -30,7 +30,7 @@ def generate_data_quality_report(player_seasons: pd.DataFrame) -> dict:
         for column in player_seasons.columns
     }
     return {
-        "n_rows": int(len(player_seasons)),
+        "n_rows": len(player_seasons),
         "n_players": int(player_seasons["player_id"].nunique())
         if "player_id" in player_seasons.columns
         else 0,

@@ -50,7 +50,7 @@ def load_table(name: str, raw_dir: Path | None = None) -> pd.DataFrame:
         raise DataLoadError(f"Missing Transfermarkt file: {path}")
     try:
         frame = pd.read_csv(path, low_memory=False)
-    except Exception as exc:  # noqa: BLE001 — wrap any parse failure
+    except Exception as exc:
         raise DataLoadError(f"Cannot read {path}: {exc}") from exc
     for column in _DATE_COLUMNS.get(name, ()):
         if column in frame.columns:

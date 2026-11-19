@@ -1,6 +1,9 @@
 """Member B: value regression, undervalued classification, sequence models."""
 
-from src.modeling.importance import permutation_importance_table, select_scorecard_features
+from src.modeling.importance import (
+    permutation_importance_table,
+    select_scorecard_features,
+)
 from src.modeling.metrics import classification_metrics, regression_metrics
 from src.modeling.sequence import (
     compare_sequence_to_tabular,
