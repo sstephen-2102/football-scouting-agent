@@ -43,13 +43,10 @@ from src.modeling.sequence import (
 )
 from src.modeling.value import (
     compare_value_models,
-    export_player_scores,
     fit_gradient_boosting_value,
-    fit_ridge_value,
     fit_undervalued_classifier,
     freeze_undervalued_threshold,
     label_undervalued,
-    predict_player_scores,
 )
 from src.optimize.squad import export_squad
 from src.policy.bid import export_policy
@@ -75,14 +72,11 @@ STUBS: list[tuple[Callable[..., object], str, tuple[str, ...]]] = [
     (export_forecast, "member_a", ()),
     (regression_metrics, "member_b", ("y_true_eur", "y_pred_eur")),
     (classification_metrics, "member_b", ("y_true", "y_score")),
-    (fit_ridge_value, "member_b", ("train", "feature_columns")),
     (fit_gradient_boosting_value, "member_b", ("train", "feature_columns")),
     (freeze_undervalued_threshold, "member_b", ("val", "predicted_value_eur", "actual_value_eur")),
     (label_undervalued, "member_b", ("frame", "predicted_value_eur", "actual_value_eur", "threshold")),
     (fit_undervalued_classifier, "member_b", ("train", "feature_columns")),
     (compare_value_models, "member_b", ("results",)),
-    (predict_player_scores, "member_b", ("model", "player_seasons", "feature_columns")),
-    (export_player_scores, "member_b", ()),
     (last_k_appearance_windows, "member_b", ("appearances", "player_seasons")),
     (fit_lstm_value, "member_b", ("x_train", "y_train")),
     (fit_conv1d_value, "member_b", ("x_train", "y_train")),
