@@ -113,11 +113,11 @@ def predict_player_scores(
     player_seasons: pd.DataFrame,
     feature_columns: list[str],
 ) -> pd.DataFrame:
-    """Columns: player_id, season, pred_value, p_undervalued, optional archetype."""
+    """Columns: player_id, season, split, pred_value, p_undervalued, optional archetype."""
     frame = add_position_dummies(player_seasons)
     log_prediction = model.predict(frame[feature_columns])
 
-    scores = frame[["player_id", "season"]].copy()
+    scores = frame[["player_id", "season", "split"]].copy()
     scores["pred_value"] = np.clip(np.expm1(log_prediction), 0, None)
     scores["p_undervalued"] = np.nan
     return scores

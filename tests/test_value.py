@@ -68,7 +68,7 @@ def test_scores_table_follows_the_contract() -> None:
     columns = ridge_feature_columns()
     model = fit_ridge_value(add_position_dummies(table), columns)
     scores = predict_player_scores(model, table, columns)
-    assert list(scores.columns) == ["player_id", "season", "pred_value", "p_undervalued"]
+    assert list(scores.columns) == ["player_id", "season", "split", "pred_value", "p_undervalued"]
     assert len(scores) == len(table)
     assert (scores["pred_value"] >= 0).all()
     assert scores["p_undervalued"].isna().all()
