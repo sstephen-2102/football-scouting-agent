@@ -39,7 +39,8 @@ def test_status_lists_all_artifacts() -> None:
     }
 
 
-def test_scores_are_unavailable_until_pipeline_runs() -> None:
+def test_scores_are_unavailable_until_pipeline_runs(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr("service.deps.artifact_path", lambda name: tmp_path / "missing.file")
     response = client.get("/v1/scores/418560")
     assert response.status_code == 503
     detail = response.json()["detail"]
