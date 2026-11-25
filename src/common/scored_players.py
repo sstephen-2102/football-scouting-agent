@@ -106,3 +106,34 @@ def top_per_group(frame: pd.DataFrame, quotas: dict[str, int] | None = None) -> 
     ]
     result = pd.concat(picked, ignore_index=True)
     return result.sort_values("pred_value", ascending=False).reset_index(drop=True)
+
+
+def top_per_slot(frame: pd.DataFrame, per_slot: int = 3) -> pd.DataFrame:
+    """Top `per_slot` legal players for each of the 11 XI slots, deduplicated.
+
+    Guarantees every slot (including CDM, RB, LB, GK) has candidates so the
+    fixed-order XI search can reach a complete 11-player goal state.
+    """
+    from src.common.config import XI_SLOTS
+    from src.search.positions import player_legal_for_slot
+
+    if int(per_slot) < 1:
+        raise InvalidParameterError("per_slot must be at least 1.")
+
+    ordered = frame.sort_values("pred_value", ascending=False)
+    picked_ids: list[int] = []
+    seen: set[int] = set()
+    for slot in XI_SLOTS:
+        count = 0
+        for row in ordered[["player_id", "position", "sub_position"]].itertuples(index=False):
+            pos = row.position if pd.notna(row.position) else None
+            sub = row.sub_position if pd.notna(row.sub_position) else None
+            if player_legal_for_slot(pos, sub, slot):
+                pid = int(row.player_id)
+                if pid not in seen:
+                    seen.add(pid)
+                    picked_ids.append(pid)
+                count += 1
+                if count >= int(per_slot):
+                    break
+    return ordered[ordered["player_id"].isin(picked_ids)].reset_index(drop=True)

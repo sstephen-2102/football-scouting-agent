@@ -18,7 +18,7 @@ import pandas as pd
 
 from src.common.config import OUTPUTS, RANDOM_STATE, XI_SLOTS
 from src.common.exceptions import InvalidParameterError
-from src.common.scored_players import load_scored_players, top_per_group
+from src.common.scored_players import load_scored_players, top_per_slot
 from src.search.positions import player_legal_for_slot
 
 
@@ -390,9 +390,9 @@ def export_best_xi(
     """
     if shortlist_player_ids is None:
         pool = load_scored_players("test", season, root=OUTPUTS)
-        ranked = top_per_group(pool)
+        ranked = top_per_slot(pool)
         ids = [int(pid) for pid in ranked["player_id"]]
-        source = "per_group_test_by_pred_value"
+        source = "per_slot_test_by_pred_value"
     else:
         ids = [int(pid) for pid in shortlist_player_ids]
         pool = load_scored_players(None, season, root=OUTPUTS)
