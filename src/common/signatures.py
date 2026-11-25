@@ -48,9 +48,6 @@ from src.modeling.value import (
     freeze_undervalued_threshold,
     label_undervalued,
 )
-from src.optimize.squad import export_squad
-from src.policy.bid import export_policy
-from src.search.xi import export_best_xi
 
 # (callable, owner, required parameter names)
 STUBS: list[tuple[Callable[..., object], str, tuple[str, ...]]] = [
@@ -83,7 +80,4 @@ STUBS: list[tuple[Callable[..., object], str, tuple[str, ...]]] = [
     (compare_sequence_to_tabular, "member_b", ("sequence_metrics", "tabular_metrics")),
     (permutation_importance_table, "member_b", ("model", "features", "target")),
     (select_scorecard_features, "member_b", ("importance",)),
-    (export_best_xi, "member_c", ()),
-    (export_squad, "member_c", ()),
-    (export_policy, "member_c", ()),
 ]

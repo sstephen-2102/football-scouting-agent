@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,13 @@ import pandas as pd
 import pulp
 
 from src.common.config import OUTPUTS, POSITION_MINIMA
-from src.common.exceptions import InvalidParameterError, not_built
+from src.common.exceptions import InvalidParameterError
+from src.common.scored_players import (
+    SHORTLIST_PER_GROUP,
+    load_scored_players,
+    top_per_group,
+    with_ask_cost,
+)
 from src.search.positions import position_group
 
 
@@ -204,10 +211,111 @@ def compare_mip_vs_greedy(mip: dict, greedy: dict) -> dict:
     return summary
 
 
+DEFAULT_BUDGET_EUR = 80_000_000
+COST_RULE = (
+    "cost = prev_value_eur (last valuation on or before the cutoff; "
+    "pred_value where missing). An ask proxy, not a real bid."
+)
+
+
+def _budget_from_forecast(root: Path) -> tuple[float, str]:
+    """Spec rule: budget.json budget_eur when unstable is false, else the default."""
+    path = root / "forecast" / "budget.json"
+    if not path.is_file():
+        return float(DEFAULT_BUDGET_EUR), "default (forecast/budget.json not written yet)"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not payload.get("unstable", True) and "budget_eur" in payload:
+        return float(payload["budget_eur"]), "forecast/budget.json"
+    return float(DEFAULT_BUDGET_EUR), "default (forecast unstable)"
+
+
+def _min_feasible_xi_budget(frame: pd.DataFrame) -> float | None:
+    """Cost of the cheapest legal starting XI meeting POSITION_MINIMA, or None."""
+    total = 0.0
+    for group, minimum in POSITION_MINIMA.items():
+        subset = frame[frame["group"] == group].nsmallest(int(minimum), "cost")
+        if len(subset) < int(minimum):
+            return None
+        total += float(subset["cost"].sum())
+    return total
+
+
 def export_squad(
     club_id: int | None = None,
     season: int | None = None,
     budget_eur: float | None = None,
 ) -> Path:
-    """Write `outputs/optimize/squad.csv` (pipeline: allocate)."""
-    not_built("member_c", "export_squad")
+    """Write `outputs/optimize/squad.csv` and `allocation_manifest.json` (pipeline: allocate).
+
+    Shortlist = test players with per-group quotas (SHORTLIST_PER_GROUP). Cost is
+    the cutoff-dated `prev_value_eur`. When `budget_eur` is None and no stable
+    forecast budget exists, B defaults to the cheapest legal XI on the shortlist
+    so the MIP is feasible.
+    """
+    root = OUTPUTS
+    pool = load_scored_players("test", season, root=root)
+    shortlist = with_ask_cost(top_per_group(pool))
+    candidates = shortlist[["player_id", "pred_value", "position", "sub_position", "cost"]]
+    frame = _with_group_and_cost(candidates).set_index("player_id", drop=False)
+
+    if budget_eur is not None:
+        budget, budget_source = float(budget_eur), "argument"
+    else:
+        forecast_budget, forecast_source = _budget_from_forecast(root)
+        if forecast_source == "forecast/budget.json":
+            budget, budget_source = forecast_budget, forecast_source
+        else:
+            min_budget = _min_feasible_xi_budget(frame)
+            if min_budget is not None:
+                budget = min_budget
+                budget_source = "min_feasible_xi (cheapest legal XI on shortlist)"
+            else:
+                budget, budget_source = forecast_budget, forecast_source
+
+    mip = solve_squad_mip(formulate_squad_mip(candidates, budget))
+    greedy = greedy_spend(candidates, budget)
+    comparison = compare_mip_vs_greedy(mip, greedy)
+
+    rows = []
+    for source, result in (("mip", mip), ("greedy", greedy)):
+        for player_id in result["player_ids"]:
+            row = frame.loc[int(player_id)]
+            rows.append(
+                {
+                    "player_id": int(player_id),
+                    "slot_or_group": row["group"],
+                    "pred_value": float(row["pred_value"]),
+                    "cost": float(row["cost"]),
+                    "source": source,
+                }
+            )
+    table = pd.DataFrame(
+        rows, columns=["player_id", "slot_or_group", "pred_value", "cost", "source"]
+    )
+
+    out_dir = root / "optimize"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / "squad.csv"
+    table.to_csv(csv_path, index=False)
+
+    manifest = {
+        "club_id": club_id,
+        "season": season,
+        "budget_eur": budget,
+        "budget_source": budget_source,
+        "shortlist_size": int(len(candidates)),
+        "shortlist_player_ids": [int(pid) for pid in candidates["player_id"]],
+        "cost_rule": COST_RULE,
+        "shortlist_quotas": dict(SHORTLIST_PER_GROUP),
+        "n_starters": 11,
+        "position_minima": position_minima(),
+        "mip": {k: mip[k] for k in ("status", "player_ids", "spend", "quality")},
+        "greedy": {k: greedy[k] for k in ("status", "player_ids", "spend", "quality")},
+        "comparison": {
+            k: v for k, v in comparison.items() if k not in {"mip_player_ids", "greedy_player_ids"}
+        },
+    }
+    (out_dir / "allocation_manifest.json").write_text(
+        json.dumps(manifest, indent=2, default=str), encoding="utf-8"
+    )
+    return csv_path

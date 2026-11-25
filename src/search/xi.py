@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections import deque
 from dataclasses import dataclass
 from heapq import heappop, heappush
@@ -16,7 +17,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from src.common.config import OUTPUTS, RANDOM_STATE, XI_SLOTS
-from src.common.exceptions import InvalidParameterError, not_built
+from src.common.exceptions import InvalidParameterError
+from src.common.scored_players import load_scored_players, top_per_slot
 from src.search.positions import player_legal_for_slot
 
 
@@ -372,10 +374,56 @@ def compare_search(uninformed_result: dict, informed_result: dict) -> dict:
     return summary
 
 
+XI_EXPANSION_CAP = 5000
+
+
 def export_best_xi(
     club_id: int | None = None,
     season: int | None = None,
     shortlist_player_ids: list[int] | None = None,
 ) -> Path:
-    """Write `outputs/search/best_xi.json` (pipeline: search-xi)."""
-    not_built("member_c", "export_best_xi")
+    """Write `outputs/search/best_xi.json` (pipeline: search-xi).
+
+    Without ids: test-split shortlist with per-group quotas (see
+    SHORTLIST_PER_GROUP), ranked by predicted value (p_undervalued is still NaN
+    until C1). With ids: those players, latest season each.
+    """
+    if shortlist_player_ids is None:
+        pool = load_scored_players("test", season, root=OUTPUTS)
+        ranked = top_per_slot(pool)
+        ids = [int(pid) for pid in ranked["player_id"]]
+        source = "per_slot_test_by_pred_value"
+    else:
+        ids = [int(pid) for pid in shortlist_player_ids]
+        pool = load_scored_players(None, season, root=OUTPUTS)
+        pool = pool[pool["player_id"].isin(ids)].sort_values("season").drop_duplicates(
+            subset=["player_id"], keep="last"
+        )
+        source = "explicit_ids"
+
+    missing = sorted(set(ids) - set(int(pid) for pid in pool["player_id"]))
+    if missing:
+        raise InvalidParameterError(f"No scored rows for player_ids {missing}.")
+
+    players = pool[["player_id", "position", "sub_position"]].reset_index(drop=True)
+    scores = pool[["player_id", "pred_value"]].reset_index(drop=True)
+    state = initial_xi_state(ids)
+
+    bfs = uninformed_search(state, players, scores, algorithm="bfs", expansion_cap=XI_EXPANSION_CAP)
+    astar = informed_search(state, players, scores, algorithm="astar", expansion_cap=XI_EXPANSION_CAP)
+    comparison = compare_search(bfs, astar)
+
+    payload = {
+        "club_id": club_id,
+        "season": season,
+        "shortlist_source": source,
+        "shortlist_player_ids": ids,
+        "expansion_cap": XI_EXPANSION_CAP,
+        "uninformed": bfs,
+        "informed": astar,
+        "comparison": comparison,
+    }
+    path = OUTPUTS / "search" / "best_xi.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    return path
