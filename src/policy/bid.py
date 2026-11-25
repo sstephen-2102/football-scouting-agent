@@ -17,7 +17,7 @@ import pandas as pd
 from src.artifacts import artifact_path
 from src.common.config import OUTPUTS, RANDOM_STATE
 from src.common.exceptions import InvalidParameterError
-from src.common.scored_players import load_scored_players, top_by_pred_value
+from src.common.scored_players import load_scored_players, top_per_group, with_ask_cost
 from src.optimize.squad import DEFAULT_BUDGET_EUR
 
 BID_ACTIONS = ("bid", "pass")
@@ -182,7 +182,7 @@ def _episode_return(
             next_state = mdp_state(hole, budget)
         # pass or unaffordable bid → reward 0, state unchanged
 
-        if method in {"epsilon_greedy", "ucb", "q"}:
+        if method in {"ucb", "q"}:
             q_learning_update(q_table, state, action, reward, next_state)
             counts[(state, action)] = int(counts.get((state, action), 0)) + 1
         total += reward
@@ -195,10 +195,17 @@ def simulate_transfer_window(
     method: str,
     n_episodes: int = 200,
     random_state: int = RANDOM_STATE,
+    q_table: dict | None = None,
 ) -> dict:
-    """Roll out ε-greedy, UCB, Q, or greedy. Return mean/std cumulative residual."""
+    """Roll out ε-greedy, UCB, Q, or greedy. Return mean/std cumulative residual.
+
+    `epsilon_greedy` acts on the supplied trained `q_table` and never updates it.
+    `ucb` and `q` learn online from an empty table on each call.
+    """
     if method not in {"epsilon_greedy", "ucb", "q", "greedy"}:
         raise InvalidParameterError("method must be epsilon_greedy|ucb|q|greedy.")
+    if method == "epsilon_greedy" and q_table is None:
+        raise InvalidParameterError("epsilon_greedy needs a trained q_table to act on.")
     if not isinstance(shortlist, pd.DataFrame) or shortlist.empty:
         raise InvalidParameterError("shortlist must be a non-empty DataFrame.")
     required = {"pred_value"}
@@ -206,12 +213,12 @@ def simulate_transfer_window(
         raise InvalidParameterError(f"shortlist missing {sorted(missing)}")
 
     rng = Random(random_state)
-    q_table: dict = {}
+    table: dict = dict(q_table) if method == "epsilon_greedy" else {}
     counts: dict = {}
     returns: list[float] = []
     for _ in range(int(n_episodes)):
         returns.append(
-            _episode_return(shortlist, budget_eur, method, q_table, counts, rng)
+            _episode_return(shortlist, budget_eur, method, table, counts, rng)
         )
     mean = sum(returns) / len(returns)
     var = sum((value - mean) ** 2 for value in returns) / len(returns)
@@ -256,7 +263,6 @@ def compare_policies(results: dict[str, dict]) -> pd.DataFrame:
     plt.close(fig)
     return frame
 
-POLICY_SHORTLIST_SIZE = 40
 POLICY_TRAIN_EPISODES = 200
 POLICY_EVAL_EPISODES = 200
 POLICY_METHODS = ("epsilon_greedy", "ucb", "q", "greedy")
@@ -342,28 +348,40 @@ def decide_bid(
 
 
 def export_policy() -> Path:
-    """Train Q on val episodes, evaluate four methods, write the artifacts (pipeline: policy).
+    """Train Q on the val shortlist, evaluate four methods on test, write artifacts (pipeline: policy).
 
-    Writes `outputs/policy/q_table.json` and `outputs/policy/policy_comparison.csv`.
+    Training uses val so the test split stays held out for the comparison.
+    `epsilon_greedy` acts on the trained table without updating it. `q` learns
+    online while it acts. Writes `outputs/policy/q_table.json` and
+    `outputs/policy/policy_comparison.csv`.
     """
     root = OUTPUTS
     budget = float(DEFAULT_BUDGET_EUR)
-    pool = load_scored_players("val", root=root)
-    shortlist = top_by_pred_value(pool, POLICY_SHORTLIST_SIZE)
+    val_shortlist = with_ask_cost(top_per_group(load_scored_players("val", root=root)))
+    test_shortlist = with_ask_cost(top_per_group(load_scored_players("test", root=root)))
 
-    q_table = train_q_table(shortlist, budget, n_episodes=POLICY_TRAIN_EPISODES)
-    results = {
-        method: simulate_transfer_window(
-            shortlist, budget, method, n_episodes=POLICY_EVAL_EPISODES
+    q_table = train_q_table(val_shortlist, budget, n_episodes=POLICY_TRAIN_EPISODES)
+    results = {}
+    for method in POLICY_METHODS:
+        results[method] = simulate_transfer_window(
+            test_shortlist,
+            budget,
+            method,
+            n_episodes=POLICY_EVAL_EPISODES,
+            q_table=q_table if method == "epsilon_greedy" else None,
         )
-        for method in POLICY_METHODS
-    }
     comparison = compare_policies(results)
 
     out_dir = root / "policy"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "q_table.json"
-    payload = _q_table_payload(q_table, budget, [int(p) for p in shortlist["player_id"]])
+    payload = _q_table_payload(
+        q_table,
+        budget,
+        [int(p) for p in val_shortlist["player_id"]],
+    )
+    payload["train_split"] = "val"
+    payload["evaluation_split"] = "test"
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     comparison.to_csv(out_dir / "policy_comparison.csv", index=False)
     return path

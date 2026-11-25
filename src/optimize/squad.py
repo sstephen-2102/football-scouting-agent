@@ -15,7 +15,12 @@ import pulp
 
 from src.common.config import OUTPUTS, POSITION_MINIMA
 from src.common.exceptions import InvalidParameterError
-from src.common.scored_players import load_scored_players, top_by_pred_value
+from src.common.scored_players import (
+    SHORTLIST_PER_GROUP,
+    load_scored_players,
+    top_per_group,
+    with_ask_cost,
+)
 from src.search.positions import position_group
 
 
@@ -207,8 +212,10 @@ def compare_mip_vs_greedy(mip: dict, greedy: dict) -> dict:
 
 
 DEFAULT_BUDGET_EUR = 80_000_000
-SQUAD_SHORTLIST_SIZE = 40
-COST_RULE = "cost = pred_value (ask proxy, not a real bid)"
+COST_RULE = (
+    "cost = prev_value_eur (last valuation on or before the cutoff; "
+    "pred_value where missing). An ask proxy, not a real bid."
+)
 
 
 def _budget_from_forecast(root: Path) -> tuple[float, str]:
@@ -229,8 +236,9 @@ def export_squad(
 ) -> Path:
     """Write `outputs/optimize/squad.csv` and `allocation_manifest.json` (pipeline: allocate).
 
-    Shortlist = top 40 test players by predicted value. Both the MIP and the
-    greedy baseline run on that shortlist under the same budget.
+    Shortlist = test players with per-group quotas (SHORTLIST_PER_GROUP). Cost is
+    the cutoff-dated `prev_value_eur`. Both the MIP and the greedy baseline run on
+    that shortlist under the same budget.
     """
     root = OUTPUTS
     if budget_eur is None:
@@ -239,8 +247,8 @@ def export_squad(
         budget, budget_source = float(budget_eur), "argument"
 
     pool = load_scored_players("test", season, root=root)
-    shortlist = top_by_pred_value(pool, SQUAD_SHORTLIST_SIZE)
-    candidates = shortlist[["player_id", "pred_value", "position", "sub_position"]]
+    shortlist = with_ask_cost(top_per_group(pool))
+    candidates = shortlist[["player_id", "pred_value", "position", "sub_position", "cost"]]
 
     frame = _with_group_and_cost(candidates).set_index("player_id", drop=False)
     mip = solve_squad_mip(formulate_squad_mip(candidates, budget))
@@ -277,6 +285,7 @@ def export_squad(
         "shortlist_size": int(len(candidates)),
         "shortlist_player_ids": [int(pid) for pid in candidates["player_id"]],
         "cost_rule": COST_RULE,
+        "shortlist_quotas": dict(SHORTLIST_PER_GROUP),
         "n_starters": 11,
         "position_minima": position_minima(),
         "mip": {k: mip[k] for k in ("status", "player_ids", "spend", "quality")},

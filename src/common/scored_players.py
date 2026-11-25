@@ -1,7 +1,7 @@
 """Shared scored-player loader for Member C exports (search, squad, policy).
 
-Joins `player_scores.parquet` (Member B) with position and next value from the
-shared split table. Reads only; never fits a model.
+Joins `player_scores.parquet` (Member B) with position, cutoff-dated previous
+value, and next value from the shared split table. Reads only; never fits a model.
 """
 
 from __future__ import annotations
@@ -17,13 +17,17 @@ SPLITS = ("train", "val", "test", "descriptive")
 SCORES_RELATIVE = Path("experiments") / "player_scores.parquet"
 SPLIT_RELATIVE = Path("splits") / "player_season_split.parquet"
 
+# Per-group shortlist quotas. Top-N by pred_value alone picks no goalkeepers and
+# one defender on the 2024 test split, so every slot group gets its own quota.
+SHORTLIST_PER_GROUP = {"GK": 3, "DEF": 10, "MID": 10, "FWD": 10}
+
 
 def load_scored_players(
     split: str | None,
     season: int | None = None,
     root: Path | None = None,
 ) -> pd.DataFrame:
-    """Scores joined to position and next value.
+    """Scores joined to position, previous value, and next value.
 
     `split=None` returns every split. `season` filters when given.
     Raises FileNotFoundError when an upstream artifact is missing.
@@ -44,7 +48,14 @@ def load_scored_players(
     scores = pd.read_parquet(scores_path)
     table = pd.read_parquet(
         split_path,
-        columns=["player_id", "season", "position", "sub_position", "next_value_eur"],
+        columns=[
+            "player_id",
+            "season",
+            "position",
+            "sub_position",
+            "prev_value_eur",
+            "next_value_eur",
+        ],
     )
     frame = scores.merge(table, on=["player_id", "season"], how="left", validate="one_to_one")
 
@@ -55,8 +66,43 @@ def load_scored_players(
     return frame.reset_index(drop=True)
 
 
-def top_by_pred_value(frame: pd.DataFrame, n: int) -> pd.DataFrame:
-    """Top-n rows by predicted value. `p_undervalued` stays unused until C1 lands."""
-    if n < 1:
-        raise InvalidParameterError("n must be at least 1.")
-    return frame.sort_values("pred_value", ascending=False).head(int(n)).reset_index(drop=True)
+def with_ask_cost(frame: pd.DataFrame) -> pd.DataFrame:
+    """Cost = last valuation on or before the cutoff (`prev_value_eur`).
+
+    Falls back to `pred_value` only where no prior valuation exists. Both are
+    known at the cutoff, so the cost is not leaked from the next-season target.
+    """
+    out = frame.copy()
+    out["cost"] = out["prev_value_eur"].fillna(out["pred_value"]).astype(float)
+    return out
+
+
+def top_per_group(frame: pd.DataFrame, quotas: dict[str, int] | None = None) -> pd.DataFrame:
+    """Top `quota` players per slot group by predicted value.
+
+    Groups come from `position` and `sub_position` via `src.search.positions`.
+    The import is local to avoid a cycle (search imports this module).
+    """
+    from src.search.positions import position_group
+
+    quota_map = dict(SHORTLIST_PER_GROUP if quotas is None else quotas)
+    if any(int(v) < 1 for v in quota_map.values()):
+        raise InvalidParameterError("every group quota must be at least 1.")
+
+    groups = [
+        position_group(
+            row.position if pd.notna(row.position) else None,
+            row.sub_position if pd.notna(row.sub_position) else None,
+        )
+        for row in frame[["position", "sub_position"]].itertuples(index=False)
+    ]
+    tagged = frame.assign(group=groups)
+    tagged = tagged[tagged["group"].isin(quota_map)]
+    picked = [
+        tagged[tagged["group"] == group]
+        .sort_values("pred_value", ascending=False)
+        .head(int(quota))
+        for group, quota in quota_map.items()
+    ]
+    result = pd.concat(picked, ignore_index=True)
+    return result.sort_values("pred_value", ascending=False).reset_index(drop=True)

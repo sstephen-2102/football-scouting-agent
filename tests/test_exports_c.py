@@ -13,7 +13,12 @@ import src.optimize.squad
 import src.policy.bid
 import src.search.xi
 from src.common.exceptions import InvalidParameterError
-from src.common.scored_players import load_scored_players
+from src.common.scored_players import (
+    SHORTLIST_PER_GROUP,
+    load_scored_players,
+    top_per_group,
+    with_ask_cost,
+)
 from src.policy.bid import _decode_key, _encode_key, _load_q_table, decide_bid
 
 # (sub_position, pred_value) for the 2024 test pool; one GK, four DEF, four MID, five FWD.
@@ -53,12 +58,12 @@ def _write_workspace(root, test_players=TEST_PLAYERS, *, with_val: bool = True) 
     for index, (sub, pred) in enumerate(test_players):
         pid = 1000 + index
         rows.append({"player_id": pid, "season": 2024, "split": "test", "pred_value": pred * MILLION, "p_undervalued": float("nan")})
-        split_rows.append({"player_id": pid, "season": 2024, "position": SUB_TO_POSITION[sub], "sub_position": sub, "next_value_eur": pred * 1.1 * MILLION, "split": "test"})
+        split_rows.append({"player_id": pid, "season": 2024, "position": SUB_TO_POSITION[sub], "sub_position": sub, "prev_value_eur": pred * 0.9 * MILLION, "next_value_eur": pred * 1.1 * MILLION, "split": "test"})
     if with_val:
         for index, (sub, pred) in enumerate(TEST_PLAYERS):
             pid = 2000 + index
             rows.append({"player_id": pid, "season": 2023, "split": "val", "pred_value": pred * MILLION, "p_undervalued": float("nan")})
-            split_rows.append({"player_id": pid, "season": 2023, "position": SUB_TO_POSITION[sub], "sub_position": sub, "next_value_eur": (pred * 1.2 + index % 3) * MILLION, "split": "val"})
+            split_rows.append({"player_id": pid, "season": 2023, "position": SUB_TO_POSITION[sub], "sub_position": sub, "prev_value_eur": pred * 0.9 * MILLION, "next_value_eur": (pred * 1.2 + index % 3) * MILLION, "split": "val"})
     (root / "experiments").mkdir(parents=True, exist_ok=True)
     (root / "splits").mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_parquet(root / "experiments" / "player_scores.parquet", index=False)
@@ -78,6 +83,29 @@ def test_loader_joins_position_and_filters_split(workspace) -> None:
     assert len(test_rows) == len(TEST_PLAYERS)
     assert set(test_rows["split"]) == {"test"}
     assert {"position", "sub_position", "next_value_eur"} <= set(test_rows.columns)
+
+
+def test_per_group_shortlist_keeps_every_group(workspace) -> None:
+    shortlist = top_per_group(load_scored_players("test", root=workspace))
+    groups = set(shortlist["sub_position"].map(lambda s: SUB_TO_POSITION[s]))
+    assert len(shortlist) == len(TEST_PLAYERS)  # quotas are larger than the pool per group
+    assert {"Goalkeeper", "Defender", "Midfield", "Attack"} == groups
+
+
+def test_per_group_shortlist_caps_each_group(workspace) -> None:
+    quotas = {"GK": 1, "DEF": 2, "MID": 2, "FWD": 2}
+    shortlist = top_per_group(load_scored_players("test", root=workspace), quotas)
+    counts = shortlist["sub_position"].map(lambda s: SUB_TO_POSITION[s]).value_counts().to_dict()
+    assert counts == {"Goalkeeper": 1, "Defender": 2, "Midfield": 2, "Attack": 2}
+    assert set(SHORTLIST_PER_GROUP) == {"GK", "DEF", "MID", "FWD"}
+
+
+def test_ask_cost_uses_prev_value_then_falls_back_to_prediction(workspace) -> None:
+    frame = load_scored_players("test", root=workspace)
+    frame.loc[0, "prev_value_eur"] = None
+    costed = with_ask_cost(frame)
+    assert costed.loc[0, "cost"] == frame.loc[0, "pred_value"]
+    assert costed.loc[1, "cost"] == frame.loc[1, "prev_value_eur"]
 
 
 def test_loader_rejects_unknown_split(workspace) -> None:
@@ -152,6 +180,20 @@ def test_policy_export_round_trips_into_decide_bid(workspace) -> None:
     assert all(isinstance(key, tuple) and len(key) == 2 for key in table)
     decision = decide_bid(1000, 50 * MILLION, "FWD")
     assert decision["action"] in {"bid", "pass"}
+
+
+def test_epsilon_greedy_requires_a_trained_table(workspace) -> None:
+    shortlist = with_ask_cost(top_per_group(load_scored_players("val", root=workspace)))
+    with pytest.raises(InvalidParameterError, match="trained q_table"):
+        src.policy.bid.simulate_transfer_window(shortlist, 80 * MILLION, "epsilon_greedy", n_episodes=5)
+
+
+def test_epsilon_greedy_does_not_update_the_table(workspace) -> None:
+    shortlist = with_ask_cost(top_per_group(load_scored_players("val", root=workspace)))
+    table = src.policy.bid.train_q_table(shortlist, 80 * MILLION, n_episodes=20)
+    before = dict(table)
+    src.policy.bid.simulate_transfer_window(shortlist, 80 * MILLION, "epsilon_greedy", n_episodes=20, q_table=table)
+    assert table == before
 
 
 def test_q_key_encoding_round_trips() -> None:

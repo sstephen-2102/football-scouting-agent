@@ -18,7 +18,7 @@ import pandas as pd
 
 from src.common.config import OUTPUTS, RANDOM_STATE, XI_SLOTS
 from src.common.exceptions import InvalidParameterError
-from src.common.scored_players import load_scored_players, top_by_pred_value
+from src.common.scored_players import load_scored_players, top_per_group
 from src.search.positions import player_legal_for_slot
 
 
@@ -375,7 +375,6 @@ def compare_search(uninformed_result: dict, informed_result: dict) -> dict:
 
 
 XI_EXPANSION_CAP = 500
-XI_DEFAULT_SHORTLIST = 30
 
 
 def export_best_xi(
@@ -385,14 +384,15 @@ def export_best_xi(
 ) -> Path:
     """Write `outputs/search/best_xi.json` (pipeline: search-xi).
 
-    Without ids: top 30 test-split players by predicted value (p_undervalued
-    is still NaN until C1). With ids: those players, latest season each.
+    Without ids: test-split shortlist with per-group quotas (see
+    SHORTLIST_PER_GROUP), ranked by predicted value (p_undervalued is still NaN
+    until C1). With ids: those players, latest season each.
     """
     if shortlist_player_ids is None:
         pool = load_scored_players("test", season, root=OUTPUTS)
-        ranked = top_by_pred_value(pool, XI_DEFAULT_SHORTLIST)
+        ranked = top_per_group(pool)
         ids = [int(pid) for pid in ranked["player_id"]]
-        source = f"top{XI_DEFAULT_SHORTLIST}_test_by_pred_value"
+        source = "per_group_test_by_pred_value"
     else:
         ids = [int(pid) for pid in shortlist_player_ids]
         pool = load_scored_players(None, season, root=OUTPUTS)
