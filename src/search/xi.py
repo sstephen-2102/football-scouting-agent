@@ -374,7 +374,7 @@ def compare_search(uninformed_result: dict, informed_result: dict) -> dict:
     return summary
 
 
-XI_EXPANSION_CAP = 500
+XI_EXPANSION_CAP = 5000
 
 
 def export_best_xi(

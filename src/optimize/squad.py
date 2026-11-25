@@ -229,6 +229,17 @@ def _budget_from_forecast(root: Path) -> tuple[float, str]:
     return float(DEFAULT_BUDGET_EUR), "default (forecast unstable)"
 
 
+def _min_feasible_xi_budget(frame: pd.DataFrame) -> float | None:
+    """Cost of the cheapest legal starting XI meeting POSITION_MINIMA, or None."""
+    total = 0.0
+    for group, minimum in POSITION_MINIMA.items():
+        subset = frame[frame["group"] == group].nsmallest(int(minimum), "cost")
+        if len(subset) < int(minimum):
+            return None
+        total += float(subset["cost"].sum())
+    return total
+
+
 def export_squad(
     club_id: int | None = None,
     season: int | None = None,
@@ -237,20 +248,30 @@ def export_squad(
     """Write `outputs/optimize/squad.csv` and `allocation_manifest.json` (pipeline: allocate).
 
     Shortlist = test players with per-group quotas (SHORTLIST_PER_GROUP). Cost is
-    the cutoff-dated `prev_value_eur`. Both the MIP and the greedy baseline run on
-    that shortlist under the same budget.
+    the cutoff-dated `prev_value_eur`. When `budget_eur` is None and no stable
+    forecast budget exists, B defaults to the cheapest legal XI on the shortlist
+    so the MIP is feasible.
     """
     root = OUTPUTS
-    if budget_eur is None:
-        budget, budget_source = _budget_from_forecast(root)
-    else:
-        budget, budget_source = float(budget_eur), "argument"
-
     pool = load_scored_players("test", season, root=root)
     shortlist = with_ask_cost(top_per_group(pool))
     candidates = shortlist[["player_id", "pred_value", "position", "sub_position", "cost"]]
-
     frame = _with_group_and_cost(candidates).set_index("player_id", drop=False)
+
+    if budget_eur is not None:
+        budget, budget_source = float(budget_eur), "argument"
+    else:
+        forecast_budget, forecast_source = _budget_from_forecast(root)
+        if forecast_source == "forecast/budget.json":
+            budget, budget_source = forecast_budget, forecast_source
+        else:
+            min_budget = _min_feasible_xi_budget(frame)
+            if min_budget is not None:
+                budget = min_budget
+                budget_source = "min_feasible_xi (cheapest legal XI on shortlist)"
+            else:
+                budget, budget_source = forecast_budget, forecast_source
+
     mip = solve_squad_mip(formulate_squad_mip(candidates, budget))
     greedy = greedy_spend(candidates, budget)
     comparison = compare_mip_vs_greedy(mip, greedy)

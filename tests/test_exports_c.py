@@ -160,6 +160,15 @@ def test_squad_is_infeasible_without_a_goalkeeper(tmp_path, monkeypatch) -> None
     assert set(table["source"]) <= {"greedy"}
 
 
+def test_squad_uses_min_feasible_xi_budget_when_no_forecast(workspace) -> None:
+    csv = src.optimize.squad.export_squad()
+    manifest = json.loads((csv.parent / "allocation_manifest.json").read_text())
+    assert manifest["budget_source"].startswith("min_feasible_xi")
+    assert manifest["mip"]["status"] == "optimal"
+    assert len(manifest["mip"]["player_ids"]) == 11
+    assert manifest["mip"]["spend"] <= manifest["budget_eur"] + 1e-6
+
+
 def test_budget_comes_from_forecast_only_when_stable(workspace) -> None:
     forecast = workspace / "forecast"
     forecast.mkdir()
