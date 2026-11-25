@@ -14,9 +14,8 @@ def test_artifact_owners_and_member_stubs_missing() -> None:
     assert status["archetypes"]["owner"] == "member_a"
     assert status["scores"]["owner"] == "member_b"
     assert status["policy"]["owner"] == "member_c"
-    # Member A/B/C jobs stay stubs until each owner lands their export.
+    # Member A's jobs stay stubs until their export lands.
     assert status["archetypes"]["ready"] is False
-    assert status["policy"]["ready"] is False
 
 
 def test_export_commands_are_wired() -> None:

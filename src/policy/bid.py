@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 from random import Random
@@ -15,7 +16,9 @@ import pandas as pd
 
 from src.artifacts import artifact_path
 from src.common.config import OUTPUTS, RANDOM_STATE
-from src.common.exceptions import InvalidParameterError, not_built
+from src.common.exceptions import InvalidParameterError
+from src.common.scored_players import load_scored_players, top_by_pred_value
+from src.optimize.squad import DEFAULT_BUDGET_EUR
 
 BID_ACTIONS = ("bid", "pass")
 BUDGET_BIN_EUR = 5_000_000  # €5m bins
@@ -253,12 +256,68 @@ def compare_policies(results: dict[str, dict]) -> pd.DataFrame:
     plt.close(fig)
     return frame
 
+POLICY_SHORTLIST_SIZE = 40
+POLICY_TRAIN_EPISODES = 200
+POLICY_EVAL_EPISODES = 200
+POLICY_METHODS = ("epsilon_greedy", "ucb", "q", "greedy")
+
+
+def train_q_table(
+    shortlist: pd.DataFrame,
+    budget_eur: float,
+    n_episodes: int = POLICY_TRAIN_EPISODES,
+    random_state: int = RANDOM_STATE,
+) -> dict:
+    """Train Q(state, action) by replaying the shortlist with the Q-learning rollout."""
+    if not isinstance(shortlist, pd.DataFrame) or shortlist.empty:
+        raise InvalidParameterError("shortlist must be a non-empty DataFrame.")
+    rng = Random(random_state)
+    q_table: dict = {}
+    counts: dict = {}
+    for _ in range(int(n_episodes)):
+        _episode_return(shortlist, budget_eur, "q", q_table, counts, rng)
+    return q_table
+
+
+def _encode_key(state: Any, action: str) -> str:
+    hole, budget_bin, mix = state
+    if "|" in str(hole):
+        raise InvalidParameterError("position_hole must not contain '|'.")
+    mix_text = ",".join(str(int(x)) for x in mix)
+    return "|".join([str(hole), str(int(budget_bin)), mix_text, action])
+
+
+def _decode_key(key: str) -> tuple[tuple, str]:
+    hole, budget_bin, mix_text, action = key.split("|")
+    mix = tuple(int(x) for x in mix_text.split(",")) if mix_text else ()
+    return (hole, int(budget_bin), mix), action
+
+
+def _q_table_payload(q_table: dict, budget_eur: float, shortlist_ids: list[int]) -> dict:
+    return {
+        "format": "q_table_v1",
+        "budget_eur": float(budget_eur),
+        "budget_bin_eur": BUDGET_BIN_EUR,
+        "actions": list(BID_ACTIONS),
+        "shortlist_player_ids": [int(pid) for pid in shortlist_ids],
+        "entries": {
+            _encode_key(state, action): float(value)
+            for (state, action), value in sorted(q_table.items(), key=lambda kv: str(kv[0]))
+        },
+    }
+
+
 def _load_q_table() -> dict:
     """Load Q-table when export_policy has written the artifact; else empty."""
     path = artifact_path("policy")
     if not path.is_file():
         return {}
-    return {}  # JSON parsing lands with export_policy
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("format") != "q_table_v1":
+        raise InvalidParameterError(f"Unknown policy artifact format in {path}.")
+    return {
+        _decode_key(key): float(value) for key, value in payload.get("entries", {}).items()
+    }
 
 
 def decide_bid(
@@ -283,5 +342,28 @@ def decide_bid(
 
 
 def export_policy() -> Path:
-    """Write `outputs/policy/q_table.json` (pipeline: policy)."""
-    not_built("member_c", "export_policy")
+    """Train Q on val episodes, evaluate four methods, write the artifacts (pipeline: policy).
+
+    Writes `outputs/policy/q_table.json` and `outputs/policy/policy_comparison.csv`.
+    """
+    root = OUTPUTS
+    budget = float(DEFAULT_BUDGET_EUR)
+    pool = load_scored_players("val", root=root)
+    shortlist = top_by_pred_value(pool, POLICY_SHORTLIST_SIZE)
+
+    q_table = train_q_table(shortlist, budget, n_episodes=POLICY_TRAIN_EPISODES)
+    results = {
+        method: simulate_transfer_window(
+            shortlist, budget, method, n_episodes=POLICY_EVAL_EPISODES
+        )
+        for method in POLICY_METHODS
+    }
+    comparison = compare_policies(results)
+
+    out_dir = root / "policy"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "q_table.json"
+    payload = _q_table_payload(q_table, budget, [int(p) for p in shortlist["player_id"]])
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    comparison.to_csv(out_dir / "policy_comparison.csv", index=False)
+    return path
