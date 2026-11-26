@@ -8,7 +8,9 @@ from src.common.exceptions import InvalidParameterError
 from src.modeling.value import (
     POSITIONS,
     add_position_dummies,
+    evaluate_on_split,
     fit_ridge_value,
+    persistence_baseline,
     predict_player_scores,
     ridge_feature_columns,
 )
@@ -72,3 +74,30 @@ def test_scores_table_follows_the_contract() -> None:
     assert len(scores) == len(table)
     assert (scores["pred_value"] >= 0).all()
     assert scores["p_undervalued"].isna().all()
+
+def _value_table() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "split": ["train", "val", "val", "descriptive"],
+            "prev_value_eur": [100, 100, 200, 300],
+            "next_value_eur": [120, 110, 180, np.nan],
+        }
+    )
+
+
+def test_persistence_baseline_returns_the_last_known_value() -> None:
+    table = _value_table()
+    assert list(persistence_baseline(table)) == [100, 100, 200, 300]
+
+
+def test_evaluate_on_split_uses_only_that_split() -> None:
+    table = _value_table()
+    result = evaluate_on_split(table, persistence_baseline(table), "val")
+    assert result["n"] == 2
+    assert result["mae_eur"] == pytest.approx(15.0)
+
+
+def test_evaluate_rejects_the_descriptive_split() -> None:
+    table = _value_table()
+    with pytest.raises(InvalidParameterError):
+        evaluate_on_split(table, persistence_baseline(table), "descriptive")

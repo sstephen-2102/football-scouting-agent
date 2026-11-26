@@ -34,7 +34,7 @@ from src.modeling.importance import (
     permutation_importance_table,
     select_scorecard_features,
 )
-from src.modeling.metrics import classification_metrics, regression_metrics
+from src.modeling.metrics import classification_metrics
 from src.modeling.sequence import (
     compare_sequence_to_tabular,
     fit_conv1d_value,
@@ -70,7 +70,6 @@ STUBS: list[tuple[Callable[..., object], str, tuple[str, ...]]] = [
     (evaluate_forecast, "member_a", ("y_true", "y_pred")),
     (map_forecast_to_budget, "member_a", ("forecast",)),
     (export_forecast, "member_a", ()),
-    (regression_metrics, "member_b", ("y_true_eur", "y_pred_eur")),
     (classification_metrics, "member_b", ("y_true", "y_score")),
     (fit_gradient_boosting_value, "member_b", ("train", "feature_columns")),
     (freeze_undervalued_threshold, "member_b", ("val", "predicted_value_eur", "actual_value_eur")),

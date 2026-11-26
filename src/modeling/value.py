@@ -14,6 +14,7 @@ from sklearn.preprocessing import StandardScaler
 
 from src.common.config import OUTPUTS, RANDOM_STATE, TARGET_VALUE_UPLIFT
 from src.common.exceptions import InvalidParameterError, not_built
+from src.modeling.metrics import regression_metrics
 
 POSITIONS = ["Attack", "Defender", "Goalkeeper", "Midfield", "Missing"]
 NUMERIC_FEATURES = [
@@ -41,6 +42,22 @@ def add_position_dummies(player_seasons: pd.DataFrame) -> pd.DataFrame:
 def ridge_feature_columns() -> list[str]:
     """The 13 R0 inputs: 8 numeric plus 5 position dummies."""
     return NUMERIC_FEATURES + [f"pos_{name}" for name in POSITIONS]
+
+def persistence_baseline(player_seasons: pd.DataFrame) -> pd.Series:
+    """Reference rule: next value = the last known value (prev_value_eur)."""
+    return player_seasons["prev_value_eur"].astype(float)
+
+
+def evaluate_on_split(
+    table: pd.DataFrame,
+    predicted_eur: pd.Series,
+    split: str,
+) -> dict:
+    """Locked regression metrics for one split. Descriptive rows have no target."""
+    if split == "descriptive":
+        raise InvalidParameterError("The descriptive split has no target to score.")
+    rows = table["split"] == split
+    return regression_metrics(table.loc[rows, "next_value_eur"], predicted_eur[rows])
 
 def fit_ridge_value(
     train: pd.DataFrame,
