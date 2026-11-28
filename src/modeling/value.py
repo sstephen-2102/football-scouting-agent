@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from itertools import product
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import RidgeCV
 from sklearn.pipeline import Pipeline
@@ -14,6 +16,7 @@ from sklearn.preprocessing import StandardScaler
 
 from src.common.config import OUTPUTS, RANDOM_STATE, TARGET_VALUE_UPLIFT
 from src.common.exceptions import InvalidParameterError, not_built
+from src.modeling.metrics import regression_metrics
 
 POSITIONS = ["Attack", "Defender", "Goalkeeper", "Midfield", "Missing"]
 NUMERIC_FEATURES = [
@@ -28,7 +31,11 @@ NUMERIC_FEATURES = [
 ]
 SPLIT_TABLE = OUTPUTS / "splits" / "player_season_split.parquet"
 SCORES_PATH = OUTPUTS / "experiments" / "player_scores.parquet"
-
+DEFAULT_BOOSTING_GRID = {
+    "max_depth": [2, 3, 4],
+    "learning_rate": [0.05, 0.1],
+    "max_iter": [100, 200],
+}
 def add_position_dummies(player_seasons: pd.DataFrame) -> pd.DataFrame:
     """Return a copy with one 0/1 column per position, always the same five."""
     out = player_seasons.copy()
@@ -41,6 +48,22 @@ def add_position_dummies(player_seasons: pd.DataFrame) -> pd.DataFrame:
 def ridge_feature_columns() -> list[str]:
     """The 13 R0 inputs: 8 numeric plus 5 position dummies."""
     return NUMERIC_FEATURES + [f"pos_{name}" for name in POSITIONS]
+
+def persistence_baseline(player_seasons: pd.DataFrame) -> pd.Series:
+    """Reference rule: next value = the last known value (prev_value_eur)."""
+    return player_seasons["prev_value_eur"].astype(float)
+
+
+def evaluate_on_split(
+    table: pd.DataFrame,
+    predicted_eur: pd.Series,
+    split: str,
+) -> dict:
+    """Locked regression metrics for one split. Descriptive rows have no target."""
+    if split == "descriptive":
+        raise InvalidParameterError("The descriptive split has no target to score.")
+    rows = table["split"] == split
+    return regression_metrics(table.loc[rows, "next_value_eur"], predicted_eur[rows])
 
 def fit_ridge_value(
     train: pd.DataFrame,
@@ -68,9 +91,36 @@ def fit_gradient_boosting_value(
     target_column: str = "log_next_value",
     param_grid: dict | None = None,
     random_state: int = RANDOM_STATE,
+    val: pd.DataFrame | None = None,
 ) -> Any:
     """R1: gradient boosting with a validation grid. Freeze params on val, not test."""
-    not_built("member_b", "fit_gradient_boosting_value")
+    # Piece 1: guards
+    if target_column in feature_columns:
+        raise InvalidParameterError("The target column cannot be a feature.")
+    if not (train["split"] == "train").all():
+        raise InvalidParameterError("R1 must be fit on train rows only.")
+    if val is None or not (val["split"] == "val").all():
+        raise InvalidParameterError("R1 needs validation rows (split == 'val') to choose its settings.")
+
+    # Piece 2: try every combination, keep the best on validation
+    grid = param_grid or DEFAULT_BOOSTING_GRID
+    names = list(grid)
+    best_key, best_model, best_params = None, None, None
+    for values in product(*grid.values()):
+        params = dict(zip(names, values))
+        model = HistGradientBoostingRegressor(
+            **params, random_state=random_state, early_stopping=False
+        )
+        model.fit(train[feature_columns], train[target_column])
+        predicted_eur = np.clip(np.expm1(model.predict(val[feature_columns])), 0, None)
+        result = regression_metrics(val["next_value_eur"], predicted_eur)
+        key = (-result["spearman"], result["rmse_log"])
+        if best_key is None or key < best_key:
+            best_key, best_model, best_params = key, model, params
+
+    # Piece 3: stash the winning settings on the model and return it
+    best_model.best_params_ = best_params
+    return best_model
 
 
 def freeze_undervalued_threshold(
@@ -129,7 +179,8 @@ def export_player_scores() -> Path:
     columns = ridge_feature_columns()
 
     train = table[table["split"] == "train"]
-    model = fit_ridge_value(train, columns)
+    val = table[table["split"] == "val"]
+    model = fit_gradient_boosting_value(train, columns, val=val)
     scores = predict_player_scores(model, table, columns)
 
     SCORES_PATH.parent.mkdir(parents=True, exist_ok=True)
