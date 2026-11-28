@@ -43,7 +43,6 @@ from src.modeling.sequence import (
 )
 from src.modeling.value import (
     compare_value_models,
-    fit_gradient_boosting_value,
     fit_undervalued_classifier,
     freeze_undervalued_threshold,
     label_undervalued,
@@ -71,7 +70,6 @@ STUBS: list[tuple[Callable[..., object], str, tuple[str, ...]]] = [
     (map_forecast_to_budget, "member_a", ("forecast",)),
     (export_forecast, "member_a", ()),
     (classification_metrics, "member_b", ("y_true", "y_score")),
-    (fit_gradient_boosting_value, "member_b", ("train", "feature_columns")),
     (freeze_undervalued_threshold, "member_b", ("val", "predicted_value_eur", "actual_value_eur")),
     (label_undervalued, "member_b", ("frame", "predicted_value_eur", "actual_value_eur", "threshold")),
     (fit_undervalued_classifier, "member_b", ("train", "feature_columns")),
